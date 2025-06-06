@@ -9,9 +9,9 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>explore-with-me-stats-server</artifactId>
+    <artifactId>explore-with-me-stats-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 
-    <name>stats-server</name>
+    <name>stats-service</name>
 
 </project>
