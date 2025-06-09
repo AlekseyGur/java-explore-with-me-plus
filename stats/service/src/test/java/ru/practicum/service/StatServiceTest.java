@@ -18,6 +18,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ContextConfiguration;
 
 import ru.practicum.dto.HitDto;
 import ru.practicum.dto.StatDto;
@@ -26,6 +28,8 @@ import ru.practicum.service.model.ViewStats;
 import ru.practicum.service.repository.EndpointHitRepository;
 import ru.practicum.service.repository.StatRepository;
 
+@SpringBootTest
+@ContextConfiguration(classes = StatConfig.class)
 @ExtendWith(MockitoExtension.class)
 class StatServiceTest {
 
@@ -45,6 +49,7 @@ class StatServiceTest {
     void setUp() {
         hitDto = new HitDto("appName", "/some/endpoint", "127.0.0.1", LocalDateTime.now());
         viewStats = new ViewStats("appName", "/some/endpoint", 1L);
+        this.statService = new StatServiceImpl(endpointHitRepository, statRepository);
     }
 
     @Test
