@@ -9,9 +9,6 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>explore-with-me-stats-dto</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-
-    <name>stats-dto</name>
+    <artifactId>stats-dto</artifactId>
 
 </project>
