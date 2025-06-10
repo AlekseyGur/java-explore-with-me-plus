@@ -15,7 +15,7 @@ services:
     image: postgres:16.1
     container_name: stats-db
     environment:
-      - POSTGRES_DB=stats_db
+      - POSTGRES_DB=stat_db
       - POSTGRES_USER=dbuser
       - POSTGRES_PASSWORD=12345
 
