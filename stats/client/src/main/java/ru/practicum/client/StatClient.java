@@ -4,20 +4,19 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
-import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+import lombok.extern.slf4j.Slf4j;
 import ru.practicum.dto.HitDto;
 import ru.practicum.dto.StatDto;
 import javax.validation.Valid;
 import java.util.List;
 
+@Slf4j
 @Service
 public class StatClient {
-    @Value("stats-server:9090")
+    @Value("stats-server-url")
     String serverUrl;
 
     private final RestClient restClient;
@@ -34,7 +33,7 @@ public class StatClient {
                     .retrieve()
                     .toBodilessEntity();
         } catch (RestClientException e) {
-            handleRestClientException(e, "Ошибка при отправке hit");
+            log.error("Ошибка при отправке hit");
         }
     }
 
@@ -55,7 +54,7 @@ public class StatClient {
                     .body(new ParameterizedTypeReference<List<StatDto>>() {
                     });
         } catch (RestClientException e) {
-            handleRestClientException(e, "Ошибка при получении статистики");
+            log.error("Ошибка при получении статистики");
         }
         return List.of();
     }
