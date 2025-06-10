@@ -1,4 +1,4 @@
-package ru.practicum.service;
+package ru.practicum.server.service;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -12,16 +12,14 @@ import java.time.LocalDateTime;
 
 import ru.practicum.dto.HitDto;
 import ru.practicum.dto.StatDto;
-import ru.practicum.service.model.EndpointHit;
-import ru.practicum.service.model.ViewStats;
-import ru.practicum.service.repository.StatRepository;
-import ru.practicum.service.repository.EndpointHitRepository;
+import ru.practicum.server.model.EndpointHit;
+import ru.practicum.server.model.ViewStats;
+import ru.practicum.server.repository.EndpointHitRepository;
 
 @Service
 @RequiredArgsConstructor
 public class StatServiceImpl implements StatService {
     private final EndpointHitRepository endpointHitRepository;
-    private final StatRepository statRepository;
 
     @Override
     @Transactional
@@ -42,10 +40,11 @@ public class StatServiceImpl implements StatService {
         List<ViewStats> stats;
 
         if (uris != null && !uris.isEmpty()) {
-            stats = unique ? statRepository.getUniqueStatsByUris(start, end, uris)
-                    : statRepository.getStatsByUris(start, end, uris);
+            stats = unique ? endpointHitRepository.getUniqueStatsByUris(start, end, uris)
+                    : endpointHitRepository.getStatsByUris(start, end, uris);
         } else {
-            stats = unique ? statRepository.getUniqueStats(start, end) : statRepository.getStats(start, end);
+            stats = unique ? endpointHitRepository.getUniqueStats(start, end)
+                    : endpointHitRepository.getStats(start, end);
         }
 
         return stats.stream()

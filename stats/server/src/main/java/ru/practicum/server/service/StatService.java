@@ -1,4 +1,4 @@
-package ru.practicum.service;
+package ru.practicum.server.service;
 
 import java.util.List;
 import java.time.LocalDateTime;
