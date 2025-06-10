@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>stats-client</artifactId>
+    
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
