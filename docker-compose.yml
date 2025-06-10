@@ -7,9 +7,9 @@ services:
     depends_on:
       - stats-db
     environment:
-      - STAT_URL_DB=jdbc:postgresql://state_server-db:5432/stat_db
-      - STAT_USERNAME_DB=dbuser
-      - STAT_PASSWORD_DB=12345
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://state_server-db:5432/stat_db
+      - SPRING_DATASOURCE_USERNAME=dbuser
+      - SPRING_DATASOURCE_PASSWORD=12345
 
   stats-db:
     image: postgres:16.1
