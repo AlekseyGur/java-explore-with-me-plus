@@ -7,6 +7,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import io.micrometer.common.lang.Nullable;
 import ru.practicum.dto.HitDto;
 import ru.practicum.dto.NewHitDto;
 import ru.practicum.dto.StatDto;
@@ -34,8 +36,8 @@ public class StatsController {
     public List<StatDto> getStats(
                     @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime start,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime end,
-            @RequestParam(defaultValue = "[]") List<String> uris,
-            @RequestParam(defaultValue = "false") boolean unique) {
+            @RequestParam @Nullable List<String> uris,
+                    @RequestParam(defaultValue = "false") boolean unique) {
         return statService.get(start, end, uris, unique);
     }
 }
