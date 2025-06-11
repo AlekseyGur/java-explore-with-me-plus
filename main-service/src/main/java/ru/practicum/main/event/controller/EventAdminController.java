@@ -26,17 +26,14 @@ public class EventAdminController {
     private final EventService eventService;
 
     @GetMapping
-    public List<EventDto> get(@RequestParam(required = false) List<Long> users,
+    public List<EventDto> search(
+                    @RequestParam(required = false) List<Long> users,
             @RequestParam(required = false) List<String> states,
             @RequestParam(required = false) List<Long> categories,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeStart,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeEnd,
             @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
             @RequestParam(defaultValue = "10") @Positive Integer size) {
-        log.info("Запрос списка событий: usersId {}, states {}, categoriesOd {}, rangeStart {}," +
-                " rangeEnd {}, from {}, size {}", users, states, categories, rangeStart,
-                rangeEnd, from, size);
-
         List<EventState> statesValues = null;
         if (states != null) {
             statesValues = states.stream()
@@ -44,7 +41,8 @@ public class EventAdminController {
                     .toList();
         }
 
-        EventSearchParameters parameters = new EventSearchParameters(users, statesValues, categories, rangeStart,
+        EventSearchParameters parameters = new EventSearchParameters(users,
+                statesValues, categories, rangeStart,
                 rangeEnd, from, size);
         return eventService.search(parameters);
     }
@@ -52,7 +50,8 @@ public class EventAdminController {
     @PatchMapping("/{eventId}")
     public EventDto update(@PathVariable long eventId,
             @Valid @RequestBody UpdateEventAdminRequest updateEventAdminRequest) {
-        log.info("Запрос на изменения события {} с параметрами {}", eventId, updateEventAdminRequest);
+        log.info("Запрос на изменения события {} с параметрами {}", eventId,
+                updateEventAdminRequest);
         return eventService.update(eventId, updateEventAdminRequest);
     }
 

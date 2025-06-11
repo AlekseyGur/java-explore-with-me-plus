@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.main.event.dto.EventDto;
 import ru.practicum.main.event.model.EventState;
-import ru.practicum.main.event.service.EventService;
+import ru.practicum.main.event.service.EventServiceHelper;
 import ru.practicum.main.system.exception.NotFoundException;
 import ru.practicum.main.system.exception.DuplicatedDataException;
 import ru.practicum.main.request.dto.ParticipationRequestDto;
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 public class RequestServiceImpl implements RequestService {
     private final RequestRepository requestRepository;
     private final UserService userService;
-    private final EventService eventService;
+    private final EventServiceHelper eventService;
 
     @Override
     public List<ParticipationRequestDto> getUserRequests(Long userId) {

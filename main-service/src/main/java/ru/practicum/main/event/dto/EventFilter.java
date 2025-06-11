@@ -7,7 +7,7 @@ import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
+import java.util.List;
 
 @Getter
 @Setter
@@ -15,7 +15,7 @@ import java.util.Collection;
 public class EventFilter {
     @NotBlank
     String text;
-    Collection<Long> categories;
+    List<Long> categories;
     Boolean paid;
 
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
