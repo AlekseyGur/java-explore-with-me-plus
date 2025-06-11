@@ -1,27 +1,27 @@
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE
 );
 
-CREATE TABLE locations (
+CREATE TABLE IF NOT EXISTS locations (
     id SERIAL PRIMARY KEY,
     lat DECIMAL(10, 8) NOT NULL,
     lon DECIMAL(11, 8) NOT NULL
 );
 
-CREATE TABLE compilations (
+CREATE TABLE IF NOT EXISTS compilations (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     pinned BOOLEAN
 );
 
-CREATE TABLE events (
+CREATE TABLE IF NOT EXISTS events (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     annotation TEXT NOT NULL,
@@ -39,13 +39,13 @@ CREATE TABLE events (
     views INTEGER DEFAULT 0
 );
 
-CREATE TABLE compilations_events (
+CREATE TABLE IF NOT EXISTS compilations_events (
     compilation_id INTEGER REFERENCES compilations(id),
     event_id INTEGER REFERENCES events(id),
     PRIMARY KEY (compilation_id, event_id)
 );
 
-CREATE TABLE requests (
+CREATE TABLE IF NOT EXISTS requests (
     id SERIAL PRIMARY KEY,
     event_id INTEGER REFERENCES events(id),
     requester_id INTEGER REFERENCES users(id),
