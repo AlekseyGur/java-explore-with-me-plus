@@ -13,50 +13,57 @@ public class ErrorHandler {
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse constraintViolationException(final ConstraintViolationException e) {
-        log.error("Недопустимое значение параметра. " + e.getMessage());
-        return new ErrorResponse(e.getMessage());
+    public ApiError constraintViolationException(final ConstraintViolationException e) {
+        String reason = "Недопустимое значение параметра";
+        log.error(reason + ". " + e.getMessage());
+        return new ApiError(HttpStatus.BAD_REQUEST, reason, e.getMessage());
     }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ErrorResponse internalServerException(final InternalServerException e) {
-        log.error("Ошибка сервера. " + e.getMessage());
-        return new ErrorResponse(e.getMessage());
+    public ApiError internalServerException(final InternalServerException e) {
+        String reason = "Ошибка сервера";
+        log.error(reason + ". " + e.getMessage());
+        return new ApiError(HttpStatus.INTERNAL_SERVER_ERROR, reason, e.getMessage());
     }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.FORBIDDEN)
-    public ErrorResponse accessDeniedException(final AccessDeniedException e) {
-        log.error("Доступ заблокирован. " + e.getMessage());
-        return new ErrorResponse(e.getMessage());
+    public ApiError accessDeniedException(final AccessDeniedException e) {
+        String reason = "Доступ заблокирован";
+        log.error(reason + ". " + e.getMessage());
+        return new ApiError(HttpStatus.FORBIDDEN, reason, e.getMessage());
     }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorResponse conditionsNotMetException(final ConditionsNotMetException e) {
-        log.error("Условия не выполнены. " + e.getMessage());
-        return new ErrorResponse(e.getMessage());
+    public ApiError conditionsNotMetException(final ConditionsNotMetException e) {
+        String reason = "Условия не выполнены";
+        log.error(reason + ". " + e.getMessage());
+        return new ApiError(HttpStatus.CONFLICT, reason, e.getMessage());
     }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorResponse duplicatedDataException(final DuplicatedDataException e) {
-        log.error("Дубликат данных. " + e.getMessage());
-        return new ErrorResponse(e.getMessage());
+    public ApiError duplicatedDataException(final DuplicatedDataException e) {
+        String reason = "Дубликат данных";
+        log.error(reason + ". " + e.getMessage());
+        return new ApiError(HttpStatus.CONFLICT, reason, e.getMessage());
     }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ErrorResponse notFoundException(final NotFoundException e) {
-        log.error("Ресурс не найден. " + e.getMessage());
-        return new ErrorResponse(e.getMessage());
+    public ApiError notFoundException(final NotFoundException e) {
+        String reason = "Ресурс не найден";
+        log.error(reason + ". " + e.getMessage());
+        return new ApiError(HttpStatus.NOT_FOUND, reason, e.getMessage());
     }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse validationException(final ValidationException e) {
-        log.error("Данные не прошли проверку. " + e.getMessage());
-        return new ErrorResponse(e.getMessage());
+    public ApiError validationException(final ValidationException e) {
+        String reason = "Данные не прошли проверку";
+        log.error(reason + ". " + e.getMessage());
+        return new ApiError(HttpStatus.BAD_REQUEST, reason, e.getMessage());
     }
 }
