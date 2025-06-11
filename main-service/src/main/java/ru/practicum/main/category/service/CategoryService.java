@@ -6,7 +6,9 @@ import java.util.List;
 
 public interface CategoryService {
 
-    CategoryDto findById(Long id);
+    CategoryDto get(Long id);
+
+    List<CategoryDto> get(List<Long> ids);
 
     List<CategoryDto> findAll(Integer from, Integer size);
 
