@@ -18,7 +18,7 @@ public class UserMapper {
         return userDto;
     }
 
-    public static User toUser(UserDto userDto) {
+    public static User fromDto(UserDto userDto) {
         User user = new User();
         user.setId(userDto.getId());
         user.setName(userDto.getName());
@@ -26,14 +26,14 @@ public class UserMapper {
         return user;
     }
 
-    public static User toUser(UserNewDto userDto) {
+    public static User fromDto(UserNewDto userDto) {
         User user = new User();
         user.setName(userDto.getName());
         user.setEmail(userDto.getEmail());
         return user;
     }
 
-    public static User toUser(UserUpdateDto userDto) {
+    public static User fromDto(UserUpdateDto userDto) {
         User user = new User();
         user.setId(userDto.getId());
         user.setName(userDto.getName());
@@ -41,8 +41,8 @@ public class UserMapper {
         return user;
     }
 
-    public static List<User> toUser(List<UserDto> usersDto) {
-        return usersDto.stream().map(UserMapper::toUser).toList();
+    public static List<User> fromDto(List<UserDto> usersDto) {
+        return usersDto.stream().map(UserMapper::fromDto).toList();
     }
 
     public static List<UserDto> toDto(List<User> users) {
