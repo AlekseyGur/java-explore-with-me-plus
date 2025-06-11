@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 
 import io.micrometer.common.lang.Nullable;
 import ru.practicum.dto.HitDto;
-import ru.practicum.dto.NewHitDto;
 import ru.practicum.dto.StatDto;
 import ru.practicum.server.service.StatService;
 
@@ -27,7 +26,7 @@ public class StatsController {
 
     @PostMapping(path = "/hit")
     @ResponseStatus(HttpStatus.CREATED)
-    public void save(@RequestBody @Valid NewHitDto newHitDto) {
+    public void save(@RequestBody @Valid HitDto newHitDto) {
         statService
                 .save(new HitDto(newHitDto.getApp(), newHitDto.getUri(), newHitDto.getIp(), newHitDto.getTimestamp()));
     }
