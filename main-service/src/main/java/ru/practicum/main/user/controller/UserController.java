@@ -14,10 +14,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import ru.practicum.main.user.interfaces.UserService;
 import ru.practicum.main.user.dto.UserDto;
 import ru.practicum.main.user.dto.UserNewDto;
 import ru.practicum.main.user.dto.UserUpdateDto;
+import ru.practicum.main.user.service.UserService;
 
 @RestController
 @RequiredArgsConstructor

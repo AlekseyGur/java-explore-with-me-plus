@@ -1,4 +1,4 @@
-package ru.practicum.main.user.interfaces;
+package ru.practicum.main.user.service;
 
 import java.util.List;
 
