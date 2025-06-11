@@ -43,7 +43,7 @@ public class RequestServiceImpl implements RequestService {
             throw new DuplicatedDataException("Заявка уже существует");
         }
 
-        EventDto event = eventService.getEventById(eventId);
+        EventDto event = eventService.getById(eventId);
 
         if (event.getInitiator().getId().equals(userId)) {
             throw new IllegalStateException("Нельзя подавать заявку на своё собственное событие.");
