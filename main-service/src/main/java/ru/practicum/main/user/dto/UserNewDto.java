@@ -9,12 +9,12 @@ import lombok.Setter;
 @Getter
 @Setter
 public class UserNewDto {
-    @Size(min = 2, max = 255)
+    @Size(min = 2, max = 250)
     @NotBlank(message = "Поле name не может быть пустым")
     private String name;
 
     @Email
-    @Size(min = 2, max = 255)
+    @Size(min = 6, max = 254)
     @NotBlank(message = "Поле email не может быть пустым")
     private String email;
 }
