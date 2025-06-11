@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import ru.practicum.main.system.exception.DuplicatedDataException;
 import ru.practicum.main.system.exception.NotFoundException;
 import ru.practicum.main.user.dto.UserDto;
-import ru.practicum.main.user.interfaces.UserService;
 import ru.practicum.main.user.mapper.UserMapper;
 import ru.practicum.main.user.model.User;
 import ru.practicum.main.user.dto.UserNewDto;

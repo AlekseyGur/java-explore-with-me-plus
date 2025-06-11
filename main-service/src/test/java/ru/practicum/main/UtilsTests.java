@@ -4,7 +4,7 @@ import java.util.Random;
 
 import ru.practicum.main.user.dto.UserDto;
 import ru.practicum.main.user.dto.UserNewDto;
-import ru.practicum.main.user.interfaces.UserService;
+import ru.practicum.main.user.service.UserService;
 
 public class UtilsTests {
 
