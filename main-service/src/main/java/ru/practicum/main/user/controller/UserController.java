@@ -33,9 +33,9 @@ public class UserController {
     }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.OK)
+    @ResponseStatus(HttpStatus.CREATED)
     public UserDto add(@Valid @RequestBody UserNewDto user) {
-        return userService.save(user);
+        return userService.create(user);
     }
 
     @PatchMapping("/{userId}")
@@ -47,7 +47,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.OK)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
         userService.delete(id);
     }
