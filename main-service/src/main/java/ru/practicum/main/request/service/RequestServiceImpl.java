@@ -18,6 +18,7 @@ import ru.practicum.main.user.service.UserService;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -43,7 +44,7 @@ public class RequestServiceImpl implements RequestService {
             throw new DuplicatedDataException("Заявка уже существует");
         }
 
-        EventDto event = eventService.getById(eventId);
+        EventDto event = eventService.get(eventId);
 
         if (event.getInitiator().getId().equals(userId)) {
             throw new IllegalStateException("Нельзя подавать заявку на своё собственное событие.");
@@ -88,5 +89,16 @@ public class RequestServiceImpl implements RequestService {
 
         request.setStatus(RequestStatus.CANCELED.toString());
         return RequestMapper.toDto(requestRepository.save(request));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<Long, Integer> getConfirmedEventsRequestsCount(List<Long> eventsIds) {
+        return requestRepository.getCountByEventIdInAndStatus(
+                eventsIds,
+                RequestStatus.CONFIRMED.toString()).entrySet().stream()
+                .collect(Collectors.toMap(
+                        entry -> entry.getKey(),
+                        entry -> entry.getValue().intValue()));
     }
 }

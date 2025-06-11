@@ -8,9 +8,13 @@ import java.util.Collection;
 import java.util.List;
 
 public interface EventService {
-    EventDto getById(long eventId);
+    EventDto get(Long eventId);
 
-    Collection<EventShortDto> getEventsByFilter(EventPublicParam param);
+    List<EventDto> get(List<Long> eventIds);
+
+    //
+
+    Collection<EventShortDto> getByFilter(EventFilter param);
 
     void changeViews(Long id);
 
@@ -28,11 +32,11 @@ public interface EventService {
 
     EventDto update(Long eventId, UpdateEventAdminRequest updateEventAdminRequest);
 
-    List<ParticipationRequestDto> findRequestsByEventId(long userId, long eventId);
+    List<ParticipationRequestDto> findRequestsByEventId(Long userId, Long eventId);
 
-    EventRequestStatusUpdateResult updateRequestsStatus(long userId,
-            long eventId,
+    EventRequestStatusUpdateResult updateRequestsStatus(Long userId,
+                    Long eventId,
             EventRequestStatusUpdateRequest request);
 
-    Collection<ParticipationRequestDto> findAllRequestsByEventId(long userId, long eventId);
+    Collection<ParticipationRequestDto> findAllRequestsByEventId(Long userId, Long eventId);
 }
