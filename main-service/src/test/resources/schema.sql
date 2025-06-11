@@ -1,0 +1,54 @@
+CREATE TABLE IF NOT EXISTS categories (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS locations (
+    id SERIAL PRIMARY KEY,
+    lat DECIMAL(10, 8) NOT NULL,
+    lon DECIMAL(11, 8) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS compilations (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    pinned BOOLEAN
+);
+
+CREATE TABLE IF NOT EXISTS events (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    annotation TEXT NOT NULL,
+    description TEXT,
+    event_date TIMESTAMP NOT NULL,
+    location_id INTEGER REFERENCES locations(id),
+    category_id INTEGER REFERENCES categories(id),
+    initiator_id INTEGER REFERENCES users(id),
+    paid BOOLEAN,
+    participant_limit INTEGER,
+    request_moderation BOOLEAN,
+    state VARCHAR(50),
+    created_on TIMESTAMP,
+    published_on TIMESTAMP,
+    views INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS compilations_events (
+    compilation_id INTEGER REFERENCES compilations(id),
+    event_id INTEGER REFERENCES events(id),
+    PRIMARY KEY (compilation_id, event_id)
+);
+
+CREATE TABLE IF NOT EXISTS requests (
+    id SERIAL PRIMARY KEY,
+    event_id INTEGER REFERENCES events(id),
+    requester_id INTEGER REFERENCES users(id),
+    status VARCHAR(50),
+    created TIMESTAMP
+);
