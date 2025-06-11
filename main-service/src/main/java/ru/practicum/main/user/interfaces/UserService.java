@@ -1,0 +1,23 @@
+package ru.practicum.main.user.interfaces;
+
+import java.util.List;
+
+import ru.practicum.main.user.dto.UserDto;
+import ru.practicum.main.user.dto.UserNewDto;
+import ru.practicum.main.user.dto.UserUpdateDto;
+
+public interface UserService {
+    UserDto get(Long id);
+
+    List<UserDto> get(List<Long> id);
+
+    UserDto save(UserNewDto user);
+
+    void delete(Long id);
+
+    boolean checkIdExist(Long id);
+
+    boolean checkEmailExist(String email);
+
+    UserDto patch(UserUpdateDto user);
+}
