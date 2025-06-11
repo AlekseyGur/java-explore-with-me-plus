@@ -28,10 +28,15 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public CategoryDto findById(Long id) {
+    public CategoryDto get(Long id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Категория с таким id не найдена"));
         return CategoryMapper.toDto(category);
+    }
+
+    @Override
+    public List<CategoryDto> get(List<Long> ids) {
+        return CategoryMapper.toDto(categoryRepository.getByIdIn(ids));
     }
 
     @Override
