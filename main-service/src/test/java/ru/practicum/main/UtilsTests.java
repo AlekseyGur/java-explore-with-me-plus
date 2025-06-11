@@ -25,7 +25,7 @@ public class UtilsTests {
         UserNewDto userDto = new UserNewDto();
         userDto.setEmail(UtilsTests.genEmail());
         userDto.setName("username " + UtilsTests.genString(5));
-        return userService.save(userDto);
+        return userService.create(userDto);
     }
 
 }

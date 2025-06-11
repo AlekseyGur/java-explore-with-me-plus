@@ -35,8 +35,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserDto save(UserNewDto userDto) {
-        User user = UserMapper.toUser(userDto);
+    public UserDto create(UserNewDto userDto) {
+        User user = UserMapper.fromDto(userDto);
 
         if (checkEmailExist(user.getEmail())) {
             throw new DuplicatedDataException("Пользователь с таким email уже существует");
@@ -68,7 +68,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserDto patch(UserUpdateDto userDto) {
-        User user = UserMapper.toUser(userDto);
+        User user = UserMapper.fromDto(userDto);
 
         if (!userRepository.existsById(user.getId())) {
             throw new NotFoundException("Пользователь с таким id не найден");

@@ -11,7 +11,7 @@ public interface UserService {
 
     List<UserDto> get(List<Long> id);
 
-    UserDto save(UserNewDto user);
+    UserDto create(UserNewDto user);
 
     void delete(Long id);
 
