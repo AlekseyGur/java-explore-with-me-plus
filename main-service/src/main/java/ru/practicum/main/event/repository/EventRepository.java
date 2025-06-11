@@ -2,6 +2,7 @@ package ru.practicum.main.event.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import ru.practicum.main.event.model.Event;
@@ -14,7 +15,9 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
 
     Optional<Event> findByIdAndState(Long id, String state);
 
-    Page<Event> findAllByInitiatorId(Long userId, Pageable page);
+    Page<Event> findByInitiatorId(Long userId, Pageable page);
 
     Optional<Event> findByIdAndInitiatorId(Integer eventId, Long userId);
+
+    Page<Event> findAll(Specification<Event> spec, Pageable pageable);
 }

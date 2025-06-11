@@ -51,25 +51,18 @@ public class EventPrivateController {
         return eventService.updateEvent(userId, eventId, updateEventUserRequest);
     }
 
-    // @PatchMapping("/{eventId}/requests")
-    // public EventRequestStatusUpdateResult updateRequests(@PathVariable Integer
-    // userId,
-    // @PathVariable Integer eventId,
-    // @RequestBody EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest)
-    // {
-    // log.info("Updating requests for event with id {} by user with id {} -
-    // Started", eventId, userId);
-    // return eventService.updateRequestsStatus(userId, eventId,
-    // eventRequestStatusUpdateRequest);
-    // }
+    @PatchMapping("/{eventId}/requests")
+    public EventRequestStatusUpdateResult updateRequests(@PathVariable Integer userId,
+            @PathVariable Integer eventId,
+            @RequestBody EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest) {
+        return eventService.updateRequestsStatus(userId, eventId,
+                eventRequestStatusUpdateRequest);
+    }
 
-    // @GetMapping("/{eventId}/requests")
-    // public Collection<ParticipationRequestDto>
-    // getRequestsByOwnerOfEvent(@PathVariable Integer userId,
-    // @PathVariable Integer eventId) {
-    // log.info("Getting requests for event with id {} by user with id {} -
-    // Started", eventId, userId);
-    // return eventService.findAllRequestsByEventId(userId, eventId);
-    // }
+    @GetMapping("/{eventId}/requests")
+    public Collection<ParticipationRequestDto> getRequestsByOwnerOfEvent(@PathVariable Integer userId,
+            @PathVariable Integer eventId) {
+        return eventService.findAllRequestsByEventId(userId, eventId);
+    }
 
 }
