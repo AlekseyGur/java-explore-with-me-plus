@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS events (
     paid BOOLEAN,
     participant_limit INTEGER,
     request_moderation BOOLEAN,
-    state_id INTEGER,
+    state VARCHAR(50),
     created_on TIMESTAMP,
     published_on TIMESTAMP,
     views INTEGER DEFAULT 0
