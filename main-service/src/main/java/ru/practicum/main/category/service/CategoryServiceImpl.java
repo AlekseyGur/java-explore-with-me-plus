@@ -12,12 +12,11 @@ import ru.practicum.main.category.repository.CategoryRepository;
 import ru.practicum.main.system.exception.NotFoundException;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
+@Transactional(readOnly = true)
 public class CategoryServiceImpl implements CategoryService {
-
     private final CategoryRepository categoryRepository;
 
     @Override
@@ -25,7 +24,7 @@ public class CategoryServiceImpl implements CategoryService {
         Pageable page = PageRequest.of(from, size);
         return categoryRepository.findAll(page).stream()
                 .map(CategoryMapper::toDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
