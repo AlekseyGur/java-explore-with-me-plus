@@ -2,6 +2,8 @@ package ru.practicum.main.user;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -69,7 +71,7 @@ public class UserServiceTest {
         user2.setName("New");
         userService.patch(user2);
 
-        UserDto userSaved = userController.get(userCreated.getId());
+        UserDto userSaved = userControllerGet(userCreated.getId());
         assertTrue(userSaved.getName().equals("New"), "Имя должно измениться");
     }
 
@@ -86,7 +88,7 @@ public class UserServiceTest {
         user2.setEmail(UtilsTests.genEmail());
         userService.patch(user2);
 
-        UserDto userSaved = userController.get(userCreated.getId());
+        UserDto userSaved = userControllerGet(userCreated.getId());
         assertTrue(userSaved.getEmail().equals(user2.getEmail()), "Email должно измениться");
     }
 
@@ -111,8 +113,11 @@ public class UserServiceTest {
         assertTrue(userSaved.getId() > 0, "Пользователь должен добавиться");
 
         userController.delete(userSaved.getId());
-        assertThrows(Exception.class, () -> userController.get(userSaved.getId()),
-                "Пользователь должен удалиться");
+        assertThrows(Exception.class, () -> userControllerGet(userSaved.getId()),
+                        "Пользователь должен удалиться");
     }
 
+    private UserDto userControllerGet(Long userId) {
+        return userController.get(List.of(userId)).get(0);
+    }
 }
