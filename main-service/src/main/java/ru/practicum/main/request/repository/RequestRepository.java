@@ -26,10 +26,10 @@ public interface RequestRepository extends JpaRepository<ParticipationRequest, L
     void setStatusAll(@Param("ids") List<Long> ids, @Param("status") String status);
 
     @Query("SELECT r.eventId, COUNT(r.id) " +
-            "FROM Request r " +
-            "WHERE r.eventId IN :eventIds " +
-            "AND r.status = :status " +
-            "GROUP BY r.eventId")
+                    "FROM ParticipationRequest r " +
+                    "WHERE r.eventId IN :eventIds " +
+                    "AND r.status = :status " +
+                    "GROUP BY r.eventId")
     Map<Long, Long> getCountByEventIdInAndStatus(
             @Param("eventIds") List<Long> eventIds,
             @Param("status") String status);

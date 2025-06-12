@@ -3,7 +3,7 @@ package ru.practicum.main.event.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Future;
-import lombok.RequiredArgsConstructor;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.data.domain.Page;
@@ -26,7 +26,7 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/admin/events")
-@RequiredArgsConstructor
+@AllArgsConstructor
 @Validated
 public class EventAdminController {
     private final StatClient statsClient;
