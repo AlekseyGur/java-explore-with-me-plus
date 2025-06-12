@@ -1,5 +1,6 @@
 package ru.practicum.main.request.service;
 
+import ru.practicum.main.event.dto.EventDto;
 import ru.practicum.main.request.dto.ParticipationRequestDto;
 
 import java.util.List;
@@ -9,10 +10,11 @@ public interface RequestService {
 
     List<ParticipationRequestDto> getUserRequests(Long userId);
 
-    ParticipationRequestDto createRequest(Long userId, Long eventId);
+    ParticipationRequestDto createRequest(Long userId, Long eventId, EventDto event);
 
     ParticipationRequestDto cancelRequest(Long userId, Long requestId);
 
     Map<Long, Integer> getConfirmedEventsRequestsCount(List<Long> eventsIds);
 
+    List<ParticipationRequestDto> findByEventIdAndIdIn(Long eventId, List<Long> requestsId);
 }
