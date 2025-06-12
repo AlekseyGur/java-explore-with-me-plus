@@ -10,4 +10,10 @@ public interface EventService {
     List<EventDto> get(List<Long> eventIds);
 
     List<EventShortDto> getByFilter(EventFilter filter);
+
+    void increaseViews(Long id);
+
+    boolean existsById(Long id);
+
+    EventDto create(Long userId, NewEventDto newEventDto);
 }
