@@ -2,49 +2,52 @@ package ru.practicum.main.event.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.main.event.dto.*;
 import ru.practicum.main.event.service.EventService;
-// import ru.practicum.main.request.dto.ParticipationRequestDto;
+import ru.practicum.main.request.dto.ParticipationRequestDto;
 
 import java.util.Collection;
 
-@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users/{userId}/events")
 public class EventPrivateController {
-
     private final EventService eventService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public EventDto createEvent(@PathVariable Long userId,
+    public EventDto create(@PathVariable Long userId,
             @Valid @RequestBody NewEventDto newEventDto) {
         return eventService.create(userId, newEventDto);
     }
 
     @GetMapping
-    public Collection<EventShortDto> getEventsByUser(@PathVariable Long userId,
-            @RequestParam(name = "from", defaultValue = "0") Integer from,
+    public Page<EventShortDto> getEventsByUser(@PathVariable Long userId,
+                    @RequestParam(name = "from", defaultValue = "0") Integer from,
             @RequestParam(name = "size", defaultValue = "10") Integer size) {
-        return eventService.getEventsByUser(userId, from, size);
+
+        Pageable pageable = PageRequest.of(from, size);
+        return eventService.getByUserId(userId, pageable);
     }
 
     @GetMapping("/{eventId}")
     public EventDto getEventById(@PathVariable Long userId,
-            @PathVariable Integer eventId) {
-        return eventService.getEventById(userId, eventId);
+            @PathVariable Long eventId) {
+        return eventService.getByEventIdAndUserId(eventId, userId);
 
     }
 
     @PatchMapping("/{eventId}")
     public EventDto updateEventByUser(@PathVariable Long userId,
-            @PathVariable Integer eventId,
-            @Valid @RequestBody UpdateEventUserRequest updateEventUserRequest) {
-        return eventService.update(userId, eventId, updateEventUserRequest);
+            @PathVariable Long eventId,
+            @Valid @RequestBody UpdateEventDto updateEventUserRequest) {
+        return eventService.updateUser(eventId, userId, updateEventUserRequest);
     }
 
     @PatchMapping("/{eventId}/requests")
@@ -60,5 +63,4 @@ public class EventPrivateController {
             @PathVariable Integer eventId) {
         return eventService.findAllRequestsByEventId(userId, eventId);
     }
-
 }
