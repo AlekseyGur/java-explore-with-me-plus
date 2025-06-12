@@ -14,10 +14,10 @@ public class LocationUpdateDto {
     @NotNull(message = "Широта не может быть пустой")
     @DecimalMin(value = "-90.00000000", message = "Широта должна быть от -90 до 90")
     @DecimalMax(value = "90.00000000", message = "Широта должна быть от -90 до 90")
-    private Double lat;
+    private Float lat;
 
     @NotNull(message = "Долгота не может быть пустой")
     @DecimalMin(value = "-180.00000000", message = "Долгота должна быть от -180 до 180")
     @DecimalMax(value = "180.00000000", message = "Долгота должна быть от -180 до 180")
-    private Double lon;
+    private Float lon;
 }

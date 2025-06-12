@@ -25,8 +25,8 @@ public interface RequestRepository extends JpaRepository<ParticipationRequest, L
     @Query("UPDATE ParticipationRequest r SET r.status = :status WHERE r.id IN :ids")
     void setStatusAll(@Param("ids") List<Long> ids, @Param("status") String status);
 
-    @Query("SELECT r.eventId, COUNT(r.id) " +
-            "FROM Request r " +
+    @Query(value = "SELECT r.eventId, COUNT(r.id) " +
+                    "FROM ParticipationRequest r " +
             "WHERE r.eventId IN :eventIds " +
             "AND r.status = :status " +
             "GROUP BY r.eventId")

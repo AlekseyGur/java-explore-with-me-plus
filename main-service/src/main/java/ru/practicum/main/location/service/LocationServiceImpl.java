@@ -23,7 +23,7 @@ public class LocationServiceImpl implements LocationService {
     private final LocationRepository locationRepository;
 
     @Override
-    public LocationDto getByLonLat(Double lon, Double lat) {
+    public LocationDto getByLonLat(Float lon, Float lat) {
         return locationRepository.findByLonAndLat(lon, lat)
                 .map(LocationMapper::toDto)
                 .orElseThrow(() -> new NotFoundException("Место с таким id не найдено"));
