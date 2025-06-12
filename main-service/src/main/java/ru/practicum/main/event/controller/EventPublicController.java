@@ -4,6 +4,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.Future;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
@@ -29,7 +31,7 @@ public class EventPublicController {
 
         @GetMapping
         @ResponseStatus(HttpStatus.OK)
-        public List<EventShortDto> find(
+        public Page<EventShortDto> find(
                                         @RequestParam(required = false) String text,
                         @RequestParam(required = false) List<Long> categories,
                         @RequestParam(required = false) Boolean paid,

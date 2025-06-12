@@ -131,7 +131,11 @@ public class EventServiceImpl implements EventService {
     @Override
     public Page<EventShortDto> getByFilter(EventFilter filter) {
         EventSpecs e = new EventSpecs();
-        Specification<Event> spec = Specification.where(e.hasText(filter.getText()));
+        Specification<Event> spec = Specification.where(null);
+
+        if (filter.getCategories() != null) {
+            spec = spec.and(e.hasText(filter.getText()));
+        }
 
         if (filter.getCategories() != null) {
             spec = spec.and(e.hasCategories(filter.getCategories()));
@@ -242,8 +246,6 @@ public class EventServiceImpl implements EventService {
         return addInfo(List.of(event)).get(0);
     }
 
-    //
-
     @Override
     public List<EventDto> search(EventSearchParameters parameters) {
         BooleanExpression expression = QEvent.event.id.gt(parameters.from());
@@ -281,6 +283,7 @@ public class EventServiceImpl implements EventService {
                 .toList();
     }
 
+    //
 
     @Override
     @Transactional

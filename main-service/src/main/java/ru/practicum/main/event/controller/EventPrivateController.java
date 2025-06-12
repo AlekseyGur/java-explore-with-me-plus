@@ -11,8 +11,8 @@ import ru.practicum.main.event.service.EventService;
 
 import java.util.Collection;
 
-@RestController
 @Slf4j
+@RestController
 @RequiredArgsConstructor
 @RequestMapping("/users/{userId}/events")
 public class EventPrivateController {
@@ -23,7 +23,6 @@ public class EventPrivateController {
     @ResponseStatus(HttpStatus.CREATED)
     public EventDto createEvent(@PathVariable Long userId,
             @Valid @RequestBody NewEventDto newEventDto) {
-        log.info("Creating event by user with id {} - Start", userId);
         return eventService.create(userId, newEventDto);
     }
 
@@ -31,14 +30,12 @@ public class EventPrivateController {
     public Collection<EventShortDto> getEventsByUser(@PathVariable Long userId,
             @RequestParam(name = "from", defaultValue = "0") Integer from,
             @RequestParam(name = "size", defaultValue = "10") Integer size) {
-        log.info("Getting events for user id {} - Start", userId);
         return eventService.getEventsByUser(userId, from, size);
     }
 
     @GetMapping("/{eventId}")
     public EventDto getEventById(@PathVariable Long userId,
             @PathVariable Integer eventId) {
-        log.info("Getting event id {} by user id {} - Start", eventId, userId);
         return eventService.getEventById(userId, eventId);
 
     }
@@ -47,7 +44,6 @@ public class EventPrivateController {
     public EventDto updateEventByUser(@PathVariable Long userId,
             @PathVariable Integer eventId,
             @Valid @RequestBody UpdateEventUserRequest updateEventUserRequest) {
-        log.info("Updating event id {} by user id {} - Start", eventId, userId);
         return eventService.update(userId, eventId, updateEventUserRequest);
     }
 
