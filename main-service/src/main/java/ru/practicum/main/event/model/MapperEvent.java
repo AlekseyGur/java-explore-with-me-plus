@@ -11,8 +11,10 @@ import ru.practicum.main.event.dto.UpdateEventUserRequest;
 import ru.practicum.main.location.dto.LocationDto;
 import ru.practicum.main.location.dto.LocationNewDto;
 import ru.practicum.main.location.dto.LocationUpdateDto;
+import ru.practicum.main.location.model.Location;
 import ru.practicum.main.user.mapper.UserMapper;
 import ru.practicum.main.user.dto.UserDto;
+import ru.practicum.main.user.model.User;
 
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
