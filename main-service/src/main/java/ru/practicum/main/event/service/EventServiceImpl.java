@@ -1,15 +1,12 @@
 package ru.practicum.main.event.service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -19,31 +16,26 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.persistence.EntityNotFoundException;
 import ru.practicum.main.category.dto.CategoryDto;
 import ru.practicum.main.category.service.CategoryService;
 import ru.practicum.main.event.dto.EventDto;
 import ru.practicum.main.event.dto.EventFilter;
 import ru.practicum.main.event.dto.EventRequestStatusUpdateRequest;
 import ru.practicum.main.event.dto.EventRequestStatusUpdateResult;
-import ru.practicum.main.event.dto.EventSearchParameters;
 import ru.practicum.main.event.dto.EventShortDto;
 import ru.practicum.main.event.dto.NewEventDto;
 import ru.practicum.main.event.dto.UpdateEventDto;
 import ru.practicum.main.event.mapper.EventMapper;
 import ru.practicum.main.event.model.Event;
 import ru.practicum.main.event.model.EventState;
-import ru.practicum.main.event.model.StateAction;
-import ru.practicum.main.event.model.StateActionUser;
 import ru.practicum.main.event.repository.EventRepository;
 import ru.practicum.main.location.dto.LocationDto;
 import ru.practicum.main.location.service.LocationService;
 import ru.practicum.main.request.dto.ParticipationRequestDto;
 import ru.practicum.main.request.enums.RequestStatus;
-import ru.practicum.main.request.model.ParticipationRequest;
-import ru.practicum.main.request.repository.RequestRepository;
 import ru.practicum.main.request.service.RequestService;
 import ru.practicum.main.system.exception.AccessDeniedException;
+import ru.practicum.main.system.exception.ConditionsNotMetException;
 import ru.practicum.main.system.exception.ConstraintViolationException;
 import ru.practicum.main.system.exception.NotFoundException;
 import ru.practicum.main.user.dto.UserDto;
@@ -270,7 +262,7 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public EventRequestStatusUpdateResult updateRequestsStatus(Long eventId, Long userId,
-            EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest) {
+            EventRequestStatusUpdateRequest updateRequest) {
 
         UserDto user = userService.get(userId);
         Event event = eventRepository.findById(eventId)
@@ -287,172 +279,69 @@ public class EventServiceImpl implements EventService {
             return result;
         }
 
-        List<ParticipationRequest> requests = requestService
-                .findByIdInAndEventId(eventRequestStatusUpdateRequest.getRequestIds(), eventId);
+        List<Long> requestsIds = updateRequest.getRequestIds();
+        List<ParticipationRequestDto> requests = requestService
+                .findByEventIdAndIdIn(eventId, requestsIds);
 
-        if (event.getConfirmedRequests() + requests.size() > event.getParticipantLimit()
-                && eventRequestStatusUpdateRequest.getStatus().equals(RequestStatus.CONFIRMED)) {
-            throw new ConflictException("exceeding the limit of participants");
-        }
-
-        if (requests.stream().anyMatch(request -> request.getStatus().equals(RequestStatus.CONFIRMED)
-                && eventRequestStatusUpdateRequest.getStatus().equals(RequestStatus.REJECTED))) {
-            throw new ConflictException("request already confirmed");
-        }
-        for (ParticipationRequest oneRequest : requests) {
-            oneRequest.setStatus(RequestStatus.valueOf(eventRequestStatusUpdateRequest.getStatus().toString()));
-        }
-        participationRequestRepository.saveAll(requests);
-        if (eventRequestStatusUpdateRequest.getStatus().equals(RequestStatus.CONFIRMED)) {
-            event.setConfirmedRequests(event.getConfirmedRequests() + requests.size());
-        }
-        eventRepository.save(event);
-        if (eventRequestStatusUpdateRequest.getStatus().equals(RequestStatus.CONFIRMED)) {
-            result.setConfirmedRequests(requests.stream()
-                    .map(ParticipationRequestMapper::toDto).toList());
+        if (requests.stream().anyMatch(x -> x.getStatus().equals(RequestStatus.REJECTED))) {
+            throw new ConditionsNotMetException(
+                    "Статус можно изменить только у заявок, находящихся в состоянии ожидания");
         }
 
-        if (eventRequestStatusUpdateRequest.getStatus().equals(RequestStatus.REJECTED)) {
-            result.setRejectedRequests(requests.stream()
-                    .map(ParticipationRequestMapper::toDto).toList());
+        List<ParticipationRequestDto> requestsConfirmed = requests.stream()
+                .filter(x -> x.getStatus().equals(RequestStatus.CONFIRMED))
+                .toList();
+
+        List<ParticipationRequestDto> requestsUnconfirmed = requests.stream()
+                .filter(x -> x.getStatus().equals(RequestStatus.PENDING))
+                .toList();
+
+        int availableSlots = (int) (event.getParticipantLimit() - requestsConfirmed.size());
+        if (availableSlots < 1L) {
+            throw new ConditionsNotMetException(
+                    "Нельзя подтвердить заявку, если уже достигнут лимит по заявкам на данное событие");
+        }
+        if (availableSlots > requestsUnconfirmed.size()) {
+            availableSlots = requestsUnconfirmed.size();
         }
 
+        List<ParticipationRequestDto> toConfirm = requestsUnconfirmed.subList(
+                0, availableSlots);
+
+        List<Long> toConfirmIds = toConfirm.stream()
+                .map(ParticipationRequestDto::getId).toList();
+
+        requestService.setStatusAll(toConfirmIds, RequestStatus.CONFIRMED.toString());
+
+        List<ParticipationRequestDto> toReject = List.of();
+        if (availableSlots < requestsUnconfirmed.size()) {
+            toReject = requestsUnconfirmed.subList(
+                    availableSlots, requestsUnconfirmed.size());
+
+            List<Long> toRejectIds = toConfirm.stream()
+                    .map(ParticipationRequestDto::getId).toList();
+
+            requestService.setStatusAll(toRejectIds, RequestStatus.REJECTED.toString());
+        }
+
+        requestsConfirmed.addAll(toConfirm);
+        result.setConfirmedRequests(requestsConfirmed);
+        result.setRejectedRequests(toReject);
         return result;
     }
 
-    // Ниже ещё не проверено
-
     @Override
-    public List<EventDto> search(EventSearchParameters parameters) {
-        BooleanExpression expression = QEvent.event.id.gt(parameters.from());
+    public List<ParticipationRequestDto> findAllRequestsByEventId(Long eventId, Long userId) {
 
-        if (parameters.usersIds() != null) {
-            expression = expression.and(QEvent.event.initiator.id.in(parameters.usersIds()));
+        if (!userService.existsById(userId)) {
+            throw new NotFoundException("Пользователя с таким id не существует");
         }
 
-        if (parameters.eventStates() != null) {
-            expression = expression.and(QEvent.event.state.in(parameters.eventStates()));
+        if (!eventRepository.existsById(eventId)) {
+            throw new NotFoundException("События с таким id не существует");
         }
 
-        if (parameters.categoriesIds() != null) {
-            expression = expression.and(QEvent.event.category.id.in(parameters.categoriesIds()));
-        }
-
-        if (parameters.rangeStart() != null && parameters.rangeEnd() != null) {
-            if (parameters.rangeStart().isAfter(parameters.rangeEnd())) {
-                throw new InvalidDateException("Время начала диапазона поиска позже времени завершения");
-            }
-
-            expression = expression.and(QEvent.event.eventDate.between(parameters.rangeStart(), parameters.rangeEnd()));
-        } else if (parameters.rangeStart() != null) {
-            expression = expression.and(QEvent.event.eventDate.after(parameters.rangeStart()));
-        } else if (parameters.rangeEnd() != null) {
-            expression = expression.and(QEvent.event.eventDate.before(parameters.rangeEnd()));
-        }
-
-        Page<Event> result;
-        Pageable pageable = PageRequest.of(0, parameters.size());
-        result = eventRepository.findAll(expression, pageable);
-
-        return result.stream()
-                .map(MapperEvent::toEventDto)
-                .toList();
+        return requestService.getByEventId(eventId);
     }
 
-
-    @Override
-    @Transactional
-    public EventDto update(Long eventId, UpdateEventAdminRequest updateEventAdminRequest) {
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new EntityNotFoundException("События с id = " + eventId + " не найдено"));
-
-        if (event.getEventDate().isBefore(LocalDateTime.now().plusHours(1))) {
-            throw new InvalidDateException(
-                    "Дата начала изменяемого события должна быть не ранее чем за час от даты публикации");
-        }
-
-        if (updateEventAdminRequest.getAnnotation() != null) {
-            event.setAnnotation(updateEventAdminRequest.getAnnotation());
-        }
-
-        if (updateEventAdminRequest.getCategory() != null) {
-            Category category = categoryService.findCategoryById(updateEventAdminRequest.getCategory());
-            event.setCategory(category);
-        }
-
-        if (updateEventAdminRequest.getDescription() != null) {
-            event.setDescription(updateEventAdminRequest.getDescription());
-        }
-
-        if (updateEventAdminRequest.getEventDate() != null) {
-            event.setEventDate(updateEventAdminRequest.getEventDate());
-        }
-
-        if (updateEventAdminRequest.getLocation() != null) {
-            event.setLocation(updateEventAdminRequest.getLocation());
-        }
-
-        if (updateEventAdminRequest.getPaid() != null) {
-            event.setPaid(updateEventAdminRequest.getPaid());
-        }
-
-        if (updateEventAdminRequest.getParticipantLimit() != null) {
-            event.setParticipantLimit(updateEventAdminRequest.getParticipantLimit());
-        }
-
-        if (updateEventAdminRequest.getRequestModeration() != null) {
-            event.setRequestModeration(updateEventAdminRequest.getRequestModeration());
-        }
-
-        if (updateEventAdminRequest.getStateAction() != null) {
-            StateAction stateAction = updateEventAdminRequest.getStateAction();
-
-            if (stateAction == StateAction.PUBLISH_EVENT) {
-                if (event.getState() != EventState.PENDING) {
-                    throw new InvalidStateException(
-                            "Событие можно публиковать, только если оно в состоянии ожидания публикации");
-                }
-                event.setState(EventState.PUBLISHED);
-                event.setPublishedOn(LocalDateTime.now());
-            }
-
-            if (stateAction == StateAction.REJECT_EVENT) {
-                if (event.getState() == EventState.PUBLISHED) {
-                    throw new InvalidStateException("Событие можно отклонить, только если оно еще не опубликовано");
-                }
-
-                event.setState(EventState.CANCELED);
-            }
-        }
-
-        if (updateEventAdminRequest.getTitle() != null) {
-            event.setTitle(updateEventAdminRequest.getTitle());
-        }
-
-        return MapperEvent.toEventDto(eventRepository.save(event));
-    }
-
-    @Override
-    public List<ParticipationRequestDto> findRequestsByEventId(long userId, long eventId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User with was not found " + userId));
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new EntityNotFoundException("События с id = " + eventId + " не найдено"));
-
-        return participationRequestRepository.findAllByEvent(event).stream()
-                .map(ParticipationRequestMapper::toDto)
-                .toList();
-    }
-
-    @Override
-    public Collection<ParticipationRequestDto> findAllRequestsByEventId(long userId, long eventId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User is not found with id = " + userId));
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException("event is not found with id = " + eventId));
-        Collection<ParticipationRequestDto> result = new ArrayList<>();
-        result = participationRequestRepository.findAllByEvent(event).stream()
-                .map(ParticipationRequestMapper::toDto).toList();
-        return result;
-    }
 }
