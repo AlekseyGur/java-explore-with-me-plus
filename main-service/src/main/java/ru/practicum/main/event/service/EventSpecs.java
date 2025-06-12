@@ -32,4 +32,12 @@ class EventSpecs {
     public Specification<Event> hasAvailable(Boolean available) {
         return (root, query, cb) -> cb.equal(root.get("available"), available);
     }
+
+    public Specification<Event> hasUsers(List<Long> users) {
+        return (root, query, cb) -> root.get("initiatorId").in(users);
+    }
+
+    public Specification<Event> hasStates(List<String> states) {
+        return (root, query, cb) -> root.get("state").in(states);
+    }
 }

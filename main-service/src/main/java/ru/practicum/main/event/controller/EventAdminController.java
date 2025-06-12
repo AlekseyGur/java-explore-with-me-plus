@@ -3,8 +3,6 @@ package ru.practicum.main.event.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Future;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -18,10 +16,8 @@ import ru.practicum.client.StatClient;
 import ru.practicum.dto.HitDto;
 import ru.practicum.main.event.dto.EventDto;
 import ru.practicum.main.event.dto.EventFilter;
-import ru.practicum.main.event.dto.EventSearchParameters;
 import ru.practicum.main.event.dto.EventShortDto;
-import ru.practicum.main.event.dto.UpdateEventAdminRequest;
-import ru.practicum.main.event.model.EventState;
+import ru.practicum.main.event.dto.UpdateEventDto;
 import ru.practicum.main.event.service.EventService;
 
 import java.time.LocalDateTime;
@@ -79,8 +75,8 @@ public class EventAdminController {
 
     @PatchMapping("/{eventId}")
     public EventDto update(@PathVariable long eventId,
-            @Valid @RequestBody UpdateEventAdminRequest updateEventAdminRequest) {
-        return eventService.update(eventId, updateEventAdminRequest);
+            @Valid @RequestBody UpdateEventDto updateEvent) {
+        return eventService.updateAdmin(eventId, updateEvent);
     }
 
 }
