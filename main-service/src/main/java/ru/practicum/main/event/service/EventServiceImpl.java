@@ -246,6 +246,8 @@ public class EventServiceImpl implements EventService {
         return addInfo(List.of(event)).get(0);
     }
 
+    // Ниже ещё не проверено
+
     @Override
     public List<EventDto> search(EventSearchParameters parameters) {
         BooleanExpression expression = QEvent.event.id.gt(parameters.from());
