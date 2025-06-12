@@ -14,6 +14,8 @@ import ru.practicum.main.system.exception.NotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -22,8 +24,18 @@ public class CompilationServiceImpl implements CompilationService {
     private final EventRepository eventRepository;
 
     @Override
-    public List<CompilationDto> getCompilationList(boolean pinned, int from, int size) {
-        return List.of();
+    public List<CompilationDto> getCompilationList(Boolean pinned, int from, int size) {
+        Stream<Compilation> compilationStream = compilationRepository.findAll().stream();
+
+        if (pinned != null) {
+            compilationStream = compilationStream.filter(c -> c.getPinned() == pinned);
+        }
+        List<CompilationDto> result = compilationStream
+                .skip(from)
+                .limit(size)
+                .map(CompilationMapper::toDto)
+                .collect(Collectors.toList());
+        return result;
     }
 
     @Override
@@ -48,11 +60,22 @@ public class CompilationServiceImpl implements CompilationService {
 
     @Override
     public void deleteCompilation(long compId) {
-
+        compilationRepository.deleteById(compId);
     }
 
     @Override
-    public CompilationDto updateCompilation(long compId, RequestCompilationUpdate requestDto)  {
-        return null;
+    public CompilationDto updateCompilation(long compId, RequestCompilationUpdate requestDto) {
+        Compilation compilation = compilationRepository.findById(compId)
+                .orElseThrow(() -> new NotFoundException("Подборка не найдена"));
+        if (requestDto.getPinned() != null) {
+            compilation.setPinned(requestDto.getPinned());
+        }
+        if (requestDto.getTitle() != null) {
+            compilation.setTitle(requestDto.getTitle());
+        }
+        if (requestDto.getEvents() != null) {
+            compilation.setEvents(eventRepository.findAllById(requestDto.getEvents()));
+        }
+        return CompilationMapper.toDto(compilationRepository.save(compilation));
     }
 }
