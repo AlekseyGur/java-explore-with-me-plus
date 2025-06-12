@@ -70,4 +70,8 @@ public class EventMapper {
     public static List<EventShortDto> toShortDto(List<Event> events) {
         return events.stream().map(EventMapper::toShortDto).toList();
     }
+
+    public static List<EventShortDto> toShortDtoFromDto(List<EventDto> events) {
+        return events.stream().map(EventMapper::toShortDto).toList();
+    }
 }
