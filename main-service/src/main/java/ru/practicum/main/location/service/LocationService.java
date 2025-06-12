@@ -7,6 +7,7 @@ import ru.practicum.main.location.dto.LocationUpdateDto;
 import java.util.List;
 
 public interface LocationService {
+    LocationDto getByLonLat(Double lon, Double lat);
 
     LocationDto findById(Long id);
 

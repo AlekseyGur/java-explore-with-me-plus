@@ -36,11 +36,13 @@ import ru.practicum.main.event.model.EventState;
 import ru.practicum.main.event.model.StateAction;
 import ru.practicum.main.event.model.StateActionUser;
 import ru.practicum.main.event.repository.EventRepository;
+import ru.practicum.main.location.dto.LocationDto;
 import ru.practicum.main.location.service.LocationService;
 import ru.practicum.main.request.dto.ParticipationRequestDto;
 import ru.practicum.main.request.enums.RequestStatus;
 import ru.practicum.main.request.model.ParticipationRequest;
 import ru.practicum.main.request.repository.RequestRepository;
+import ru.practicum.main.system.exception.AccessDeniedException;
 import ru.practicum.main.system.exception.ConstraintViolationException;
 import ru.practicum.main.system.exception.NotFoundException;
 import ru.practicum.main.user.dto.UserDto;
@@ -113,6 +115,11 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    public boolean existsByIdAndInitiatorId(Long eventId, Long userId) {
+        return eventRepository.existsByIdAndInitiatorId(eventId, userId);
+    }
+
+    @Override
     @Transactional
     public void increaseViews(Long id) {
         if (!existsById(id)) {
@@ -164,6 +171,42 @@ public class EventServiceImpl implements EventService {
                 page.getTotalElements());
     }
 
+    @Override
+    @Transactional
+    public EventDto update(Long eventId, Long userId, UpdateEventUserRequest updated) {
+        if (!updated.getEventDate().isAfter(LocalDateTime.now().plusHours(1))) {
+            throw new ConstraintViolationException("Событие можно запланировать минимум за один час до его начала");
+        }
+
+        Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
+                .orElseThrow(() -> new NotFoundException("Собатиые не найдено"));
+
+        if (event.getState().equals(EventState.PUBLISHED.toString())) {
+            throw new AccessDeniedException("Невозможно имзенить опубликованное событие");
+        }
+
+        if (event.getEventDate().isAfter(LocalDateTime.now().plusHours(1))) {
+            throw new ConstraintViolationException("Событие можно изменять минимум за один час до его начала");
+        }
+
+        if (updated.getCategory() != null) {
+            if (!categoryService.existsById(updated.getCategory())) {
+                throw new NotFoundException("Категория не найдена");
+            }
+            event.setCategoryId(updated.getCategory());
+        }
+
+        if (updated.getLocation() != null) {
+            LocationDto location = locationService.getByLonLat(
+                    updated.getLocation().getLon(),
+                    updated.getLocation().getLat());
+
+            event.setLocationId(location.getId());
+        }
+
+        return addInfo(eventRepository.save(event));
+    }
+
     private List<EventDto> addInfo(List<Event> events) {
         List<Long> eventsIds = events.stream().map(Event::getId).toList();
         List<Long> categoryIds = events.stream().map(Event::getCategoryId).toList();
@@ -202,36 +245,6 @@ public class EventServiceImpl implements EventService {
     //
 
     @Override
-    @Transactional
-    public EventDto updateEvent(Long userId, Integer eventId, UpdateEventUserRequest updateEventUserRequest) {
-        Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
-                .orElseThrow(() -> new NotFoundException("Event not found " + eventId));
-
-        validateForPrivate(event.getState(), updateEventUserRequest.getStateAction());
-        Category category;
-        if (updateEventUserRequest.getCategory() != null) {
-            category = categoryRepository.findById(updateEventUserRequest.getCategory())
-                    .orElseThrow(() -> new NotFoundException("Event not found " + eventId));
-        } else {
-            category = null;
-        }
-        Location location;
-        if (updateEventUserRequest.getLocation() != null) {
-            location = locationRepository.save(updateEventUserRequest.getLocation());
-        } else {
-            location = null;
-        }
-
-        if (updateEventUserRequest.getEventDate() != null
-                && !updateEventUserRequest.getEventDate().isAfter(LocalDateTime.now().plusHours(2))) {
-            throw new EventDateValidationException("Event date 2+ hours after now");
-        }
-
-        MapperEvent.updateFromDto(event, updateEventUserRequest, category, location);
-        return MapperEvent.toEventDto(eventRepository.save(event));
-    }
-
-    @Override
     public List<EventDto> search(EventSearchParameters parameters) {
         BooleanExpression expression = QEvent.event.id.gt(parameters.from());
 
@@ -267,6 +280,7 @@ public class EventServiceImpl implements EventService {
                 .map(MapperEvent::toEventDto)
                 .toList();
     }
+
 
     @Override
     @Transactional
@@ -404,11 +418,6 @@ public class EventServiceImpl implements EventService {
         return result;
     }
 
-    private void validateForPrivate(EventState eventState, StateActionUser stateActionUser) {
-        if (eventState.equals(EventState.PUBLISHED)) {
-            throw new ConflictException("Can't change event not cancelled or in moderation");
-        }
-    }
 
     @Override
     public Collection<ParticipationRequestDto> findAllRequestsByEventId(long userId, long eventId) {

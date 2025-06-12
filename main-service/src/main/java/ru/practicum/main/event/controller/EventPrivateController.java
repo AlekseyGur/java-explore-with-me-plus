@@ -48,7 +48,7 @@ public class EventPrivateController {
             @PathVariable Integer eventId,
             @Valid @RequestBody UpdateEventUserRequest updateEventUserRequest) {
         log.info("Updating event id {} by user id {} - Start", eventId, userId);
-        return eventService.updateEvent(userId, eventId, updateEventUserRequest);
+        return eventService.update(userId, eventId, updateEventUserRequest);
     }
 
     @PatchMapping("/{eventId}/requests")
