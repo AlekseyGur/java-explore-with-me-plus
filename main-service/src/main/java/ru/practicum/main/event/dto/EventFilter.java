@@ -39,5 +39,6 @@ public class EventFilter {
 
     List<Long> users;
 
+    @Builder.Default
     Boolean isDtoForAdminApi = false;
 }

@@ -37,6 +37,13 @@ public class RequestServiceImpl implements RequestService {
     }
 
     @Override
+    public List<ParticipationRequestDto> getByEventId(Long eventId) {
+        return requestRepository.findAllByEventId(eventId).stream()
+                .map(RequestMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     @Transactional
     public ParticipationRequestDto createRequest(Long userId, Long eventId, EventDto event) {
         if (requestRepository.findByEventIdAndRequesterId(eventId, userId).isPresent()) {
@@ -104,4 +111,10 @@ public class RequestServiceImpl implements RequestService {
     public List<ParticipationRequestDto> findByEventIdAndIdIn(Long eventId, List<Long> requestsId) {
         return RequestMapper.toDto(requestRepository.findByEventIdAndIdIn(eventId, requestsId));
     }
+
+    @Override
+    public void setStatusAll(List<Long> ids, String status) {
+        requestRepository.setStatusAll(ids, status);
+    }
+
 }
