@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
+@Builder
 @Entity
 @Table(name = "events")
 public class Event {
@@ -46,10 +47,10 @@ public class Event {
     @Column(name = "request_moderation")
     Boolean requestModeration;
 
-    @Column(name = "state_id")
-    Integer stateId;
+    @Column(name = "state")
+    String state;
 
-    @Column(name = "createdOn")
+    @Column(name = "created_on")
     LocalDateTime createdOn;
 
     @Column(name = "published_on")

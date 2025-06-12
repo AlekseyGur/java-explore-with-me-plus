@@ -1,108 +1,165 @@
 package ru.practicum.main.event.service;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.EntityNotFoundException;
-import jakarta.persistence.PersistenceUnit;
-import lombok.AllArgsConstructor;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
 
+import jakarta.persistence.EntityNotFoundException;
 import ru.practicum.main.category.dto.CategoryDto;
-import ru.practicum.main.category.model.Category;
-import ru.practicum.main.category.repository.CategoryRepository;
 import ru.practicum.main.category.service.CategoryService;
-import ru.practicum.main.event.dto.*;
-import ru.practicum.main.event.model.*;
+import ru.practicum.main.event.dto.EventDto;
+import ru.practicum.main.event.dto.EventFilter;
+import ru.practicum.main.event.dto.EventRequestStatusUpdateRequest;
+import ru.practicum.main.event.dto.EventRequestStatusUpdateResult;
+import ru.practicum.main.event.dto.EventSearchParameters;
+import ru.practicum.main.event.dto.EventShortDto;
+import ru.practicum.main.event.dto.NewEventDto;
+import ru.practicum.main.event.dto.UpdateEventAdminRequest;
+import ru.practicum.main.event.dto.UpdateEventUserRequest;
+import ru.practicum.main.event.mapper.EventMapper;
+import ru.practicum.main.event.model.Event;
+import ru.practicum.main.event.model.EventState;
+import ru.practicum.main.event.model.StateAction;
+import ru.practicum.main.event.model.StateActionUser;
 import ru.practicum.main.event.repository.EventRepository;
-import ru.practicum.main.location.service.LocationService;
 import ru.practicum.main.location.dto.LocationDto;
+import ru.practicum.main.location.service.LocationService;
 import ru.practicum.main.request.dto.ParticipationRequestDto;
 import ru.practicum.main.request.enums.RequestStatus;
-import ru.practicum.main.request.mapper.RequestMapper;
 import ru.practicum.main.request.model.ParticipationRequest;
 import ru.practicum.main.request.repository.RequestRepository;
-import ru.practicum.main.request.service.RequestService;
+import ru.practicum.main.system.exception.AccessDeniedException;
+import ru.practicum.main.system.exception.ConstraintViolationException;
 import ru.practicum.main.system.exception.NotFoundException;
 import ru.practicum.main.user.dto.UserDto;
-import ru.practicum.main.user.repository.UserRepository;
 import ru.practicum.main.user.service.UserService;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class EventServiceImpl implements EventService {
 
     private final EventRepository eventRepository;
+    private final RequestRepository requestRepository;
     private final UserService userService;
     private final CategoryService categoryService;
     private final LocationService locationService;
-    private final RequestService requestService;
 
     @Override
     public EventDto get(Long eventId) {
         EventDto event = eventRepository.findByIdAndState(eventId, EventState.PUBLISHED.toString())
-                .map(EventMapper::toDto)
-                .orElseThrow(() -> new EntityNotFoundException("Event with id=" + eventId + " was not found"));
+                .map(this::addInfo)
+                .orElseThrow(() -> new NotFoundException("Событие с таким id не найдено"));
         return event;
     }
 
     @Override
     public List<EventDto> get(List<Long> eventIds) {
-        EventDto event = eventRepository.findByIdInAndState(eventId, EventState.PUBLISHED.toString())
-                .map(EventMapper::toDto)
-                .orElseThrow(() -> new EntityNotFoundException("Event with id=" + eventId + " was not found"));
-        return event;
+        return addInfo(eventRepository.findByIdInAndState(eventIds, EventState.PUBLISHED.toString()));
     }
 
     @Override
-    public List<EventShortDto> getByFilter(EventFilter filter) {
-        Specification<Event> spec = Specification.where(hasText(filter.getText()));
+    public Page<EventShortDto> getByUserId(Long userId, Pageable pageable) {
+        Page<Event> page = eventRepository.findAllByInitiatorId(userId, pageable);
+        return new PageImpl<>(
+                EventMapper.toShortDtoFromDto(addInfo(page.getContent())),
+                pageable,
+                page.getTotalElements());
+    }
 
-        if (!filter.getText().isEmpty()) {
-            spec = spec.and(hasText(filter.getText()));
+    @Override
+    public EventDto getByEventIdAndUserId(Long eventId, Long userId) {
+        return EventMapper.toDto(eventRepository.findByIdAndInitiatorId(eventId, userId)
+                .orElseThrow(() -> new NotFoundException("Событие с таким id не найдено ")));
+    }
+
+    @Override
+    @Transactional
+    public EventDto create(Long userId, NewEventDto newEventDto) {
+        if (!newEventDto.getEventDate().isAfter(LocalDateTime.now().plusHours(1))) {
+            throw new ConstraintViolationException("Событие можно запланировать минимум за один час до его начала");
+        }
+
+        if (!userService.existsById(userId)) {
+            throw new NotFoundException("Пользователя с таким id не существует");
+        }
+
+        if (!categoryService.existsById(newEventDto.getCategory())) {
+            throw new NotFoundException("Категории с таким id не существует");
+        }
+
+        Event event = EventMapper.fromNew(newEventDto);
+        event.setInitiatorId(userId);
+        event.setCategoryId(newEventDto.getCategory());
+        event.setLocationId(locationService.create(newEventDto.getLocation()).getId());
+        return addInfo(eventRepository.save(event));
+    }
+
+    @Override
+    public boolean existsById(Long id) {
+        return eventRepository.existsById(id);
+    }
+
+    @Override
+    public boolean existsByIdAndInitiatorId(Long eventId, Long userId) {
+        return eventRepository.existsByIdAndInitiatorId(eventId, userId);
+    }
+
+    @Override
+    @Transactional
+    public void increaseViews(Long id) {
+        if (!existsById(id)) {
+            throw new NotFoundException("Собатиые не найдено");
+        }
+        eventRepository.increaseViews(id);
+    }
+
+    @Override
+    public Page<EventShortDto> getByFilter(EventFilter filter) {
+        EventSpecs e = new EventSpecs();
+        Specification<Event> spec = Specification.where(null);
+
+        if (filter.getCategories() != null) {
+            spec = spec.and(e.hasText(filter.getText()));
         }
 
         if (filter.getCategories() != null) {
-            spec = spec.and(hasCategories(filter.getCategories()));
+            spec = spec.and(e.hasCategories(filter.getCategories()));
         }
 
         if (filter.getPaid() != null) {
-            spec = spec.and(hasPaid(filter.getPaid()));
+            spec = spec.and(e.hasPaid(filter.getPaid()));
         }
 
         if (filter.getRangeStart() != null) {
-            spec = spec.and(hasRangeStart(filter.getRangeStart()));
+            spec = spec.and(e.hasRangeStart(filter.getRangeStart()));
         }
         if (filter.getRangeEnd() != null) {
-            spec = spec.and(hasRangeEnd(filter.getRangeEnd()));
+            spec = spec.and(e.hasRangeEnd(filter.getRangeEnd()));
         }
 
         if (filter.getOnlyAvailable() != null) {
-            spec = spec.and(hasAvailable(filter.getOnlyAvailable()));
+            spec = spec.and(e.hasAvailable(filter.getOnlyAvailable()));
         }
 
         Sort sort = Sort.unsorted();
         if ("EVENT_DATE".equals(filter.getSort())) {
             sort = Sort.by("eventDate").ascending();
-        } else if ("VIEWS".equals(filter.getSort())) {
+        } else {
             sort = Sort.by("views").descending();
         }
 
@@ -111,43 +168,62 @@ public class EventServiceImpl implements EventService {
                 filter.getSize(),
                 sort);
 
-        Page<EventShortDto> events = addInfo(eventRepository.findAll(spec, pageable));
-        return events.stream()
-                .toList();
+        Page<Event> page = eventRepository.findAll(spec, pageable);
+        return new PageImpl<>(
+                EventMapper.toShortDtoFromDto(addInfo(page.getContent())),
+                pageable,
+                page.getTotalElements());
     }
 
-    private Specification<Event> hasText(String text) {
-        return (root, query, cb) -> cb.like(root.get("name"), "%" + text + "%");
+    @Override
+    @Transactional
+    public EventDto update(Long eventId, Long userId, UpdateEventUserRequest updated) {
+        if (!updated.getEventDate().isAfter(LocalDateTime.now().plusHours(1))) {
+            throw new ConstraintViolationException("Событие можно запланировать минимум за один час до его начала");
+        }
+
+        Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
+                .orElseThrow(() -> new NotFoundException("Собатиые не найдено"));
+
+        if (event.getState().equals(EventState.PUBLISHED.toString())) {
+            throw new AccessDeniedException("Невозможно имзенить опубликованное событие");
+        }
+
+        if (event.getEventDate().isAfter(LocalDateTime.now().plusHours(1))) {
+            throw new ConstraintViolationException("Событие можно изменять минимум за один час до его начала");
+        }
+
+        if (updated.getCategory() != null) {
+            if (!categoryService.existsById(updated.getCategory())) {
+                throw new NotFoundException("Категория не найдена");
+            }
+            event.setCategoryId(updated.getCategory());
+        }
+
+        if (updated.getLocation() != null) {
+            LocationDto location = locationService.getByLonLat(
+                    updated.getLocation().getLon(),
+                    updated.getLocation().getLat());
+
+            event.setLocationId(location.getId());
+        }
+
+        return addInfo(eventRepository.save(event));
     }
 
-    private Specification<Event> hasCategories(Collection<Long> categories) {
-        return (root, query, cb) -> root.get("category").in(categories);
-    }
-
-    private Specification<Event> hasPaid(Boolean paid) {
-        return (root, query, cb) -> cb.equal(root.get("paid"), paid);
-    }
-
-    private Specification<Event> hasRangeStart(LocalDateTime start) {
-        return (root, query, cb) -> cb.greaterThanOrEqualTo(root.get("eventDate"), start);
-    }
-
-    private Specification<Event> hasRangeEnd(LocalDateTime end) {
-        return (root, query, cb) -> cb.lessThanOrEqualTo(root.get("eventDate"), end);
-    }
-
-    private Specification<Event> hasAvailable(Boolean available) {
-        return (root, query, cb) -> cb.equal(root.get("available"), available);
-    }
-
-    private List<EventShortDto> addInfo(List<Event> events) {
+    private List<EventDto> addInfo(List<Event> events) {
         List<Long> eventsIds = events.stream().map(Event::getId).toList();
         List<Long> categoryIds = events.stream().map(Event::getCategoryId).toList();
         List<Long> usersIds = events.stream().map(Event::getInitiatorId).toList();
 
         List<CategoryDto> categories = categoryService.get(categoryIds);
         List<UserDto> users = userService.get(usersIds);
-        Map<Long, Integer> requests = requestService.getConfirmedEventsRequestsCount(eventsIds);
+        Map<Long, Integer> requests = requestRepository.getCountByEventIdInAndStatus(
+                eventsIds,
+                RequestStatus.CONFIRMED.toString()).entrySet().stream()
+                .collect(Collectors.toMap(
+                        entry -> entry.getKey(),
+                        entry -> entry.getValue().intValue()));
 
         Map<Long, CategoryDto> catsByIds = categories.stream()
                 .collect(Collectors.toMap(CategoryDto::getId, Function.identity()));
@@ -155,103 +231,22 @@ public class EventServiceImpl implements EventService {
         Map<Long, UserDto> usersByIds = users.stream()
                 .collect(Collectors.toMap(UserDto::getId, Function.identity()));
 
-        return events
-                .stream()
+        return events.stream()
+                .map(EventMapper::toDto)
                 .map(x -> {
                     x.setConfirmedRequests(requests.getOrDefault(x.getId(), 0));
-                    x.setCa(catsByIds.getOrDefault(x.getCategoryId(), null));
+                    x.setCategory(catsByIds.getOrDefault(x.getCategoryId(), null));
                     x.setInitiator(usersByIds.getOrDefault(x.getInitiatorId(), null));
                     return x;
                 })
-                .map(EventMapper::toShortDto)
                 .toList();
     }
 
-    private EventShortDto addInfo(Event event) {
+    private EventDto addInfo(Event event) {
         return addInfo(List.of(event)).get(0);
     }
 
-    // дальше ещё не смотрел
-
-    @Override
-    @Transactional
-    public void changeViews(Long id) {
-        Event event = eventRepository.findById(id).get();
-        event.setViews(event.getViews() + 1);
-        eventRepository.save(event);
-    }
-
-    @Override
-    @Transactional
-    public EventDto create(Long userId, NewEventDto newEventDto) {
-        if (newEventDto.getEventDate() != null
-                && !newEventDto.getEventDate().isAfter(LocalDateTime.now().plusHours(2))) {
-            throw new EventDateValidationException("Event date 2+ hours after now");
-        }
-        Category category = categoryRepository.get(newEventDto.getCategory())
-                .orElseThrow(() -> new NotFoundException("Category was not found " + newEventDto.getCategory()));
-        User user = userRepository.get(userId)
-                .orElseThrow(() -> new NotFoundException("User with was not found " + userId));
-        Event event = EventMapper.fromDto(newEventDto, category, user);
-        event.setLocation(locationRepository.create(newEventDto.getLocation()));
-
-        if (newEventDto.getPaid() == null) {
-            event.setPaid(false);
-        }
-        if (newEventDto.getParticipantLimit() == null) {
-            event.setParticipantLimit(0L);
-        }
-        if (newEventDto.getRequestModeration() == null) {
-            event.setRequestModeration(true);
-        }
-        event.setConfirmedRequests(0L);
-        event.setCreatedOn(LocalDateTime.now());
-        return EventMapper.toDto(eventRepository.save(event));
-
-    }
-
-    @Override
-    public List<EventShortDto> getEventsByUser(Long userId, Integer from, Integer size) {
-        Pageable page = PageRequest.of(from / size, size);
-        return eventRepository.findAllByInitiatorId(userId, page).stream()
-                .map(EventMapper::toEventShortDto).toList();
-    }
-
-    @Override
-    public EventDto getEventById(Long userId, Integer eventId) {
-        return EventMapper.toDto(eventRepository.findByIdAndInitiatorId(eventId, userId)
-                .orElseThrow(() -> new NotFoundException("Event not found " + eventId)));
-    }
-
-    @Override
-    @Transactional
-    public EventDto updateEvent(Long userId, Integer eventId, UpdateEventUserRequest updateEventUserRequest) {
-        Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
-                .orElseThrow(() -> new NotFoundException("Event not found " + eventId));
-
-        validateForPrivate(event.getState(), updateEventUserRequest.getStateAction());
-        Category category;
-        if (updateEventUserRequest.getCategory() != null) {
-            category = categoryRepository.get(updateEventUserRequest.getCategory())
-                    .orElseThrow(() -> new NotFoundException("Event not found " + eventId));
-        } else {
-            category = null;
-        }
-        Location location;
-        if (updateEventUserRequest.getLocation() != null) {
-            location = locationRepository.create(updateEventUserRequest.getLocation());
-        } else {
-            location = null;
-        }
-
-        if (updateEventUserRequest.getEventDate() != null
-                && !updateEventUserRequest.getEventDate().isAfter(LocalDateTime.now().plusHours(2))) {
-            throw new EventDateValidationException("Event date 2+ hours after now");
-        }
-
-        EventMapper.updateFromDto(event, updateEventUserRequest, category, location);
-        return EventMapper.toDto(eventRepository.save(event));
-    }
+    // Ниже ещё не проверено
 
     @Override
     public List<EventDto> search(EventSearchParameters parameters) {
@@ -286,9 +281,11 @@ public class EventServiceImpl implements EventService {
         result = eventRepository.findAll(expression, pageable);
 
         return result.stream()
-                .map(EventMapper::toDto)
+                .map(MapperEvent::toEventDto)
                 .toList();
     }
+
+    //
 
     @Override
     @Transactional
@@ -359,18 +356,18 @@ public class EventServiceImpl implements EventService {
             event.setTitle(updateEventAdminRequest.getTitle());
         }
 
-        return EventMapper.toDto(eventRepository.save(event));
+        return MapperEvent.toEventDto(eventRepository.save(event));
     }
 
     @Override
     public List<ParticipationRequestDto> findRequestsByEventId(long userId, long eventId) {
-        User user = userRepository.get(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User with was not found " + userId));
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new EntityNotFoundException("События с id = " + eventId + " не найдено"));
 
-        return participationRequestRepository.findAllByEventId(event).stream()
-                .map(RequestMapper::toDto)
+        return participationRequestRepository.findAllByEvent(event).stream()
+                .map(ParticipationRequestMapper::toDto)
                 .toList();
     }
 
@@ -378,7 +375,7 @@ public class EventServiceImpl implements EventService {
     @Transactional
     public EventRequestStatusUpdateResult updateRequestsStatus(long userId, long eventId,
             EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest) {
-        User user = userRepository.get(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User is not found with id = " + userId));
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("event is not found with id = " + eventId));
@@ -415,32 +412,27 @@ public class EventServiceImpl implements EventService {
         eventRepository.save(event);
         if (eventRequestStatusUpdateRequest.getStatus().equals(RequestStatus.CONFIRMED)) {
             result.setConfirmedRequests(requests.stream()
-                    .map(RequestMapper::toDto).toList());
+                    .map(ParticipationRequestMapper::toDto).toList());
         }
 
         if (eventRequestStatusUpdateRequest.getStatus().equals(RequestStatus.REJECTED)) {
             result.setRejectedRequests(requests.stream()
-                    .map(RequestMapper::toDto).toList());
+                    .map(ParticipationRequestMapper::toDto).toList());
         }
 
         return result;
     }
 
-    private void validateForPrivate(EventState eventState, StateActionUser stateActionUser) {
-        if (eventState.equals(EventState.PUBLISHED)) {
-            throw new ConflictException("Can't change event not cancelled or in moderation");
-        }
-    }
 
     @Override
     public Collection<ParticipationRequestDto> findAllRequestsByEventId(long userId, long eventId) {
-        User user = userRepository.get(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User is not found with id = " + userId));
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("event is not found with id = " + eventId));
         Collection<ParticipationRequestDto> result = new ArrayList<>();
-        result = participationRequestRepository.findAllByEventId(event).stream()
-                .map(RequestMapper::toDto).toList();
+        result = participationRequestRepository.findAllByEvent(event).stream()
+                .map(ParticipationRequestMapper::toDto).toList();
         return result;
     }
 }

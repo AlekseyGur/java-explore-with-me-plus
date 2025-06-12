@@ -1,21 +1,21 @@
 package ru.practicum.main.event.dto;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
+import java.util.List;
 
 @Getter
 @Setter
 @Builder
 public class EventFilter {
-    @NotBlank
     String text;
-    Collection<Long> categories;
+
+    List<Long> categories;
+
     Boolean paid;
 
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -34,4 +34,10 @@ public class EventFilter {
     Integer size;
 
     Boolean onlyAvailable;
+
+    List<String> states;
+
+    List<Long> users;
+
+    Boolean isDtoForAdminApi = false;
 }

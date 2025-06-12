@@ -23,6 +23,13 @@ public class LocationServiceImpl implements LocationService {
     private final LocationRepository locationRepository;
 
     @Override
+    public LocationDto getByLonLat(Double lon, Double lat) {
+        return locationRepository.findByLonAndLat(lon, lat)
+                .map(LocationMapper::toDto)
+                .orElseThrow(() -> new NotFoundException("Место с таким id не найдено"));
+    }
+
+    @Override
     public List<LocationDto> findAll(Integer from, Integer size) {
         Pageable page = PageRequest.of(from, size);
         return locationRepository.findAll(page).stream()
@@ -33,7 +40,7 @@ public class LocationServiceImpl implements LocationService {
     @Override
     public LocationDto findById(Long id) {
         Location location = locationRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Категория с таким id не найдена"));
+                .orElseThrow(() -> new NotFoundException("Место с таким id не найдено"));
         return LocationMapper.toDto(location);
     }
 
@@ -48,7 +55,7 @@ public class LocationServiceImpl implements LocationService {
     @Transactional
     public LocationDto update(Long id, LocationUpdateDto dto) {
         Location location = locationRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Категория с таким id не найдена"));
+                .orElseThrow(() -> new NotFoundException("Место с таким id не найдено"));
 
         location.setId(id);
         location.setLat(dto.getLat());
@@ -61,7 +68,7 @@ public class LocationServiceImpl implements LocationService {
     @Transactional
     public void delete(Long id) {
         if (!locationRepository.existsById(id)) {
-            throw new NotFoundException("Категория с таким id не найдена");
+            throw new NotFoundException("Место с таким id не найдено");
         }
         locationRepository.deleteById(id);
     }

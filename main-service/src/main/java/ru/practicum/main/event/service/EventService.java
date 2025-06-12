@@ -1,42 +1,30 @@
 package ru.practicum.main.event.service;
 
-import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.main.event.dto.*;
-import ru.practicum.main.request.dto.ParticipationRequestDto;
 
-import java.util.Collection;
 import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface EventService {
     EventDto get(Long eventId);
 
     List<EventDto> get(List<Long> eventIds);
 
-    //
+    Page<EventShortDto> getByFilter(EventFilter filter);
 
-    Collection<EventShortDto> getByFilter(EventFilter param);
+    void increaseViews(Long id);
 
-    void changeViews(Long id);
+    boolean existsById(Long id);
 
-    @Transactional
-    EventDto create(Long userId, NewEventDto eventDto);
+    EventDto create(Long userId, NewEventDto newEventDto);
 
-    EventDto getEventById(Long userId, Integer eventId);
+    EventDto getByEventIdAndUserId(Long eventId, Long userId);
 
-    Collection<EventShortDto> getEventsByUser(Long userId, Integer from, Integer size);
+    Page<EventShortDto> getByUserId(Long userId, Pageable pageable);
 
-    @Transactional
-    EventDto updateEvent(Long userId, Integer eventId, UpdateEventUserRequest updateEventUserRequest);
+    EventDto update(Long eventId, Long userId, UpdateEventUserRequest updated);
 
-    List<EventDto> search(EventSearchParameters parameters);
-
-    EventDto update(Long eventId, UpdateEventAdminRequest updateEventAdminRequest);
-
-    List<ParticipationRequestDto> findRequestsByEventId(Long userId, Long eventId);
-
-    EventRequestStatusUpdateResult updateRequestsStatus(Long userId,
-                    Long eventId,
-            EventRequestStatusUpdateRequest request);
-
-    Collection<ParticipationRequestDto> findAllRequestsByEventId(Long userId, Long eventId);
+    boolean existsByIdAndInitiatorId(Long eventId, Long userId);
 }
