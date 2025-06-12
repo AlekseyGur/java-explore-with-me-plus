@@ -1,6 +1,5 @@
 package ru.practicum.main.event.dto;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.*;
@@ -13,9 +12,10 @@ import java.util.List;
 @Setter
 @Builder
 public class EventFilter {
-    @NotBlank
     String text;
+
     List<Long> categories;
+
     Boolean paid;
 
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -34,4 +34,10 @@ public class EventFilter {
     Integer size;
 
     Boolean onlyAvailable;
+
+    List<String> states;
+
+    List<Long> users;
+
+    Boolean isDtoForAdminApi = false;
 }
