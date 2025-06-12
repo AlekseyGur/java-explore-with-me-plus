@@ -21,7 +21,7 @@ public class CompilationController {
     private final CompilationService compilationService;
 
     @GetMapping(path="/compilations")
-    public List<CompilationDto> getList(@RequestParam(required = false) boolean pinned,
+    public List<CompilationDto> getList(@RequestParam(required = false) Boolean pinned,
                                     @RequestParam(defaultValue = "0") int from,
                                     @RequestParam(defaultValue = "10") int size) {
         log.info("Запрос на получение подборки событий");
