@@ -13,8 +13,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 public class EventShortDto {
+    private Long id;
 
     private String annotation;
+
+    private Long categoryId;
 
     private CategoryDto category;
 
@@ -23,7 +26,7 @@ public class EventShortDto {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime eventDate;
 
-    private Long id;
+    private Long initiatorId;
 
     private UserNewDto initiator;
 
