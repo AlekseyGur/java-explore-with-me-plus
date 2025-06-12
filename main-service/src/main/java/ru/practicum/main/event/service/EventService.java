@@ -24,7 +24,12 @@ public interface EventService {
 
     Page<EventShortDto> getByUserId(Long userId, Pageable pageable);
 
-    EventDto update(Long eventId, Long userId, UpdateEventUserRequest updated);
+    EventDto updateAdmin(Long eventId, UpdateEventDto updated);
+
+    EventDto updateUser(Long eventId, Long userId, UpdateEventDto updated);
 
     boolean existsByIdAndInitiatorId(Long eventId, Long userId);
+
+    EventRequestStatusUpdateResult updateRequestsStatus(Long eventId, Long userId,
+            EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest);
 }

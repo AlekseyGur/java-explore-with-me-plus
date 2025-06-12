@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
@@ -28,8 +29,7 @@ import ru.practicum.main.event.dto.EventRequestStatusUpdateResult;
 import ru.practicum.main.event.dto.EventSearchParameters;
 import ru.practicum.main.event.dto.EventShortDto;
 import ru.practicum.main.event.dto.NewEventDto;
-import ru.practicum.main.event.dto.UpdateEventAdminRequest;
-import ru.practicum.main.event.dto.UpdateEventUserRequest;
+import ru.practicum.main.event.dto.UpdateEventDto;
 import ru.practicum.main.event.mapper.EventMapper;
 import ru.practicum.main.event.model.Event;
 import ru.practicum.main.event.model.EventState;
@@ -42,6 +42,7 @@ import ru.practicum.main.request.dto.ParticipationRequestDto;
 import ru.practicum.main.request.enums.RequestStatus;
 import ru.practicum.main.request.model.ParticipationRequest;
 import ru.practicum.main.request.repository.RequestRepository;
+import ru.practicum.main.request.service.RequestService;
 import ru.practicum.main.system.exception.AccessDeniedException;
 import ru.practicum.main.system.exception.ConstraintViolationException;
 import ru.practicum.main.system.exception.NotFoundException;
@@ -49,12 +50,12 @@ import ru.practicum.main.user.dto.UserDto;
 import ru.practicum.main.user.service.UserService;
 
 @Service
-@RequiredArgsConstructor
+@AllArgsConstructor
 @Transactional(readOnly = true)
 public class EventServiceImpl implements EventService {
 
     private final EventRepository eventRepository;
-    private final RequestRepository requestRepository;
+    private final RequestService requestService;
     private final UserService userService;
     private final CategoryService categoryService;
     private final LocationService locationService;
@@ -156,6 +157,16 @@ public class EventServiceImpl implements EventService {
             spec = spec.and(e.hasAvailable(filter.getOnlyAvailable()));
         }
 
+        if (filter.getIsDtoForAdminApi()) {
+            if (filter.getStates() != null) {
+                spec = spec.and(e.hasStates(filter.getStates()));
+            }
+
+            if (filter.getUsers() != null) {
+                spec = spec.and(e.hasUsers(filter.getUsers()));
+            }
+        }
+
         Sort sort = Sort.unsorted();
         if ("EVENT_DATE".equals(filter.getSort())) {
             sort = Sort.by("eventDate").ascending();
@@ -176,14 +187,29 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    public EventDto updateAdmin(Long eventId, UpdateEventDto updated) {
+        return update(eventId, null, updated);
+    }
+
+    @Override
+    public EventDto updateUser(Long eventId, Long userId, UpdateEventDto updated) {
+        return update(eventId, userId, updated);
+    }
+
     @Transactional
-    public EventDto update(Long eventId, Long userId, UpdateEventUserRequest updated) {
+    public EventDto update(Long eventId, Long userId, UpdateEventDto updated) {
         if (!updated.getEventDate().isAfter(LocalDateTime.now().plusHours(1))) {
             throw new ConstraintViolationException("Событие можно запланировать минимум за один час до его начала");
         }
 
-        Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
+        Event event;
+        if (userId != null) {
+            event = eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new NotFoundException("Собатиые не найдено"));
+        } else {
+            event = eventRepository.findById(eventId)
+                    .orElseThrow(() -> new NotFoundException("Собатиые не найдено"));
+        }
 
         if (event.getState().equals(EventState.PUBLISHED.toString())) {
             throw new AccessDeniedException("Невозможно имзенить опубликованное событие");
@@ -218,12 +244,7 @@ public class EventServiceImpl implements EventService {
 
         List<CategoryDto> categories = categoryService.get(categoryIds);
         List<UserDto> users = userService.get(usersIds);
-        Map<Long, Integer> requests = requestRepository.getCountByEventIdInAndStatus(
-                eventsIds,
-                RequestStatus.CONFIRMED.toString()).entrySet().stream()
-                .collect(Collectors.toMap(
-                        entry -> entry.getKey(),
-                        entry -> entry.getValue().intValue()));
+        Map<Long, Integer> requests = requestService.getConfirmedEventsRequestsCount(eventsIds);
 
         Map<Long, CategoryDto> catsByIds = categories.stream()
                 .collect(Collectors.toMap(CategoryDto::getId, Function.identity()));
@@ -244,6 +265,59 @@ public class EventServiceImpl implements EventService {
 
     private EventDto addInfo(Event event) {
         return addInfo(List.of(event)).get(0);
+    }
+
+    @Override
+    @Transactional
+    public EventRequestStatusUpdateResult updateRequestsStatus(Long eventId, Long userId,
+            EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest) {
+
+        UserDto user = userService.get(userId);
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Событие с таким id не найдено"));
+
+        if (!event.getInitiatorId().equals(user.getId()))
+            throw new AccessDeniedException(
+                    "Пользователь может изменять статус только событиям, которые он сделал сам");
+
+        // если для события лимит заявок равен 0 или отключена пре-модерация заявок, то
+        // подтверждение заявок не требуется
+        EventRequestStatusUpdateResult result = new EventRequestStatusUpdateResult();
+        if (!event.getRequestModeration() || event.getParticipantLimit() == 0) {
+            return result;
+        }
+
+        List<ParticipationRequest> requests = requestService
+                .findByIdInAndEventId(eventRequestStatusUpdateRequest.getRequestIds(), eventId);
+
+        if (event.getConfirmedRequests() + requests.size() > event.getParticipantLimit()
+                && eventRequestStatusUpdateRequest.getStatus().equals(RequestStatus.CONFIRMED)) {
+            throw new ConflictException("exceeding the limit of participants");
+        }
+
+        if (requests.stream().anyMatch(request -> request.getStatus().equals(RequestStatus.CONFIRMED)
+                && eventRequestStatusUpdateRequest.getStatus().equals(RequestStatus.REJECTED))) {
+            throw new ConflictException("request already confirmed");
+        }
+        for (ParticipationRequest oneRequest : requests) {
+            oneRequest.setStatus(RequestStatus.valueOf(eventRequestStatusUpdateRequest.getStatus().toString()));
+        }
+        participationRequestRepository.saveAll(requests);
+        if (eventRequestStatusUpdateRequest.getStatus().equals(RequestStatus.CONFIRMED)) {
+            event.setConfirmedRequests(event.getConfirmedRequests() + requests.size());
+        }
+        eventRepository.save(event);
+        if (eventRequestStatusUpdateRequest.getStatus().equals(RequestStatus.CONFIRMED)) {
+            result.setConfirmedRequests(requests.stream()
+                    .map(ParticipationRequestMapper::toDto).toList());
+        }
+
+        if (eventRequestStatusUpdateRequest.getStatus().equals(RequestStatus.REJECTED)) {
+            result.setRejectedRequests(requests.stream()
+                    .map(ParticipationRequestMapper::toDto).toList());
+        }
+
+        return result;
     }
 
     // Ниже ещё не проверено
@@ -285,7 +359,6 @@ public class EventServiceImpl implements EventService {
                 .toList();
     }
 
-    //
 
     @Override
     @Transactional
@@ -370,59 +443,6 @@ public class EventServiceImpl implements EventService {
                 .map(ParticipationRequestMapper::toDto)
                 .toList();
     }
-
-    @Override
-    @Transactional
-    public EventRequestStatusUpdateResult updateRequestsStatus(long userId, long eventId,
-            EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User is not found with id = " + userId));
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException("event is not found with id = " + eventId));
-        if (!event.getInitiator().equals(user))
-            throw new ForbiddenException(
-                    "User with id = " + userId + " is not a initiator of event with id = " + eventId);
-
-        // если для события лимит заявок равен 0 или отключена пре-модерация заявок, то
-        // подтверждение заявок не требуется
-        EventRequestStatusUpdateResult result = new EventRequestStatusUpdateResult();
-        if (!event.getRequestModeration() || event.getParticipantLimit() == 0) {
-            return result;
-        }
-
-        Collection<ParticipationRequest> requests = participationRequestRepository
-                .findByEventIdAndIdIn(eventId, eventRequestStatusUpdateRequest.getRequestIds()).stream().toList();
-
-        if (event.getConfirmedRequests() + requests.size() > event.getParticipantLimit()
-                && eventRequestStatusUpdateRequest.getStatus().equals(RequestStatus.CONFIRMED)) {
-            throw new ConflictException("exceeding the limit of participants");
-        }
-
-        if (requests.stream().anyMatch(request -> request.getStatus().equals(RequestStatus.CONFIRMED)
-                && eventRequestStatusUpdateRequest.getStatus().equals(RequestStatus.REJECTED))) {
-            throw new ConflictException("request already confirmed");
-        }
-        for (ParticipationRequest oneRequest : requests) {
-            oneRequest.setStatus(RequestStatus.valueOf(eventRequestStatusUpdateRequest.getStatus().toString()));
-        }
-        participationRequestRepository.saveAll(requests);
-        if (eventRequestStatusUpdateRequest.getStatus().equals(RequestStatus.CONFIRMED)) {
-            event.setConfirmedRequests(event.getConfirmedRequests() + requests.size());
-        }
-        eventRepository.save(event);
-        if (eventRequestStatusUpdateRequest.getStatus().equals(RequestStatus.CONFIRMED)) {
-            result.setConfirmedRequests(requests.stream()
-                    .map(ParticipationRequestMapper::toDto).toList());
-        }
-
-        if (eventRequestStatusUpdateRequest.getStatus().equals(RequestStatus.REJECTED)) {
-            result.setRejectedRequests(requests.stream()
-                    .map(ParticipationRequestMapper::toDto).toList());
-        }
-
-        return result;
-    }
-
 
     @Override
     public Collection<ParticipationRequestDto> findAllRequestsByEventId(long userId, long eventId) {
