@@ -20,7 +20,11 @@ public interface EventService {
 
     EventDto create(Long userId, NewEventDto newEventDto);
 
-    EventDto getByEventIdAndUserId(Long userId, Long eventId);
+    EventDto getByEventIdAndUserId(Long eventId, Long userId);
 
     Page<EventShortDto> getByUserId(Long userId, Pageable pageable);
+
+    EventDto update(Long eventId, Long userId, UpdateEventUserRequest updated);
+
+    boolean existsByIdAndInitiatorId(Long eventId, Long userId);
 }
