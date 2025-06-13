@@ -39,6 +39,9 @@ public class UpdateEventDto {
     @Pattern(regexp = "PUBLISH_EVENT|REJECT_EVENT|SEND_TO_REVIEW|CANCEL_REVIEW")
     private String stateAction;
 
+    @Pattern(regexp = "PUBLISH_EVENT|REJECT_EVENT|SEND_TO_REVIEW|CANCEL_REVIEW")
+    private String StateActionUser;
+
     @Size(min = 3, max = 120)
     private String title;
 }

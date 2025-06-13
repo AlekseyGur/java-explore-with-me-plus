@@ -54,7 +54,7 @@ public class RequestServiceImpl implements RequestService {
             throw new IllegalStateException("Нельзя подавать заявку на своё собственное событие.");
         }
 
-        if (!event.getState().equals(EventState.PUBLISHED)) {
+        if (event.getParticipantLimit() != 0 && !event.getState().equals(EventState.PUBLISHED.toString())) {
             throw new IllegalStateException("Нельзя подавать заявку на неопубликованное событие.");
         }
 

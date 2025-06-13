@@ -23,7 +23,6 @@ import ru.practicum.main.event.service.EventService;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Slf4j
 @RestController
 @RequestMapping("/admin/events")
 @AllArgsConstructor

@@ -119,6 +119,10 @@ public class EventServiceImpl implements EventService {
         event.setInitiatorId(userId);
         event.setCategoryId(newEventDto.getCategory());
         event.setLocationId(locationService.create(newEventDto.getLocation()).getId());
+        if (event.getParticipantLimit() == 0) {
+            event.setState(EventState.PUBLISHED.toString());
+        }
+
         return addInfo(eventRepository.save(event));
     }
 
@@ -153,7 +157,7 @@ public class EventServiceImpl implements EventService {
         EventSpecs e = new EventSpecs();
         Specification<Event> spec = Specification.where(null);
 
-        if (filter.getCategories() != null) {
+        if (filter.getText() != null) {
             spec = spec.and(e.hasTitle(filter.getText()));
         }
 
@@ -168,6 +172,7 @@ public class EventServiceImpl implements EventService {
         if (filter.getRangeStart() != null) {
             spec = spec.and(e.hasRangeStart(filter.getRangeStart()));
         }
+
         if (filter.getRangeEnd() != null) {
             spec = spec.and(e.hasRangeEnd(filter.getRangeEnd()));
         }
@@ -222,6 +227,7 @@ public class EventServiceImpl implements EventService {
 
         checkDateIsGoodThrowError(updated.getEventDate());
 
+
         Event event;
         if (!isAdminEditThis) {
             event = eventRepository.findByIdAndInitiatorId(eventId, userId)
@@ -249,14 +255,17 @@ public class EventServiceImpl implements EventService {
         }
 
         if (action != null) {
+            if (event.getParticipantLimit() == 0) {
+                event.setState(EventState.PUBLISHED.toString());
+            }
+
             if (isAdminEditThis) {
+
                 if (action.equals(StateAction.PUBLISH_EVENT.toString())
                         && event.getState().equals(EventState.PUBLISHED.toString())) {
                     throw new ConstraintViolationException("Нельзя опубликовать уже опубликованное событие");
                 }
-            }
 
-            if (isAdminEditThis) {
                 if (action.equals(StateAction.PUBLISH_EVENT.toString())) {
                     event.setState(EventState.PUBLISHED.toString());
                 } else if (action.equals(StateAction.REJECT_EVENT.toString())) {
@@ -265,6 +274,8 @@ public class EventServiceImpl implements EventService {
             } else {
                 if (action.equals(StateActionUser.SEND_TO_REVIEW.toString())) {
                     event.setState(EventState.PENDING.toString());
+                } else if (action.equals(StateActionUser.CANCEL_REVIEW.toString())) {
+                    event.setState(EventState.CANCELED.toString());
                 }
             }
         }
@@ -276,6 +287,9 @@ public class EventServiceImpl implements EventService {
     @Transactional
     public EventRequestStatusUpdateResult updateRequestsStatus(Long eventId, Long userId,
             EventRequestStatusUpdateRequest updateRequest) {
+
+        final String REJECTED = RequestStatus.REJECTED.toString();
+        String setStatus = RequestStatus.valueOf(updateRequest.getStatus()).toString();
 
         UserDto user = userService.get(userId);
         Event event = eventRepository.findById(eventId)
@@ -296,16 +310,23 @@ public class EventServiceImpl implements EventService {
         List<ParticipationRequestDto> requests = requestService
                 .findByEventIdAndIdIn(eventId, requestsIds);
 
-        if (requests.stream().anyMatch(x -> x.getStatus().equals(RequestStatus.REJECTED.toString()))) {
+        if (requests.stream().anyMatch(x -> x.getStatus().equals(REJECTED))) {
             throw new ConditionsNotMetException(
                     "Статус можно изменить только у заявок, находящихся в состоянии ожидания");
         }
 
+        if (requests.size() > 0 && setStatus.equals(REJECTED)) {
+            requestService.setStatusAll(requestsIds, REJECTED);
+            requests.forEach(x -> x.setStatus(REJECTED));
+            result.setRejectedRequests(requests);
+            return result;
+        }
+
         List<ParticipationRequestDto> requestsConfirmed = requests.stream()
                 .filter(x -> x.getStatus().equals(RequestStatus.CONFIRMED.toString()))
-                .toList();
+                .collect(Collectors.toList());
 
-        List<ParticipationRequestDto> requestsUnconfirmed = requests.stream()
+        List<ParticipationRequestDto> requestsPending = requests.stream()
                 .filter(x -> x.getStatus().equals(RequestStatus.PENDING.toString()))
                 .toList();
 
@@ -314,33 +335,35 @@ public class EventServiceImpl implements EventService {
             throw new ConditionsNotMetException(
                     "Нельзя подтвердить заявку, если уже достигнут лимит по заявкам на данное событие");
         }
-        if (availableSlots > requestsUnconfirmed.size()) {
-            availableSlots = requestsUnconfirmed.size();
+        if (availableSlots > requestsPending.size()) {
+            availableSlots = requestsPending.size();
         }
 
-        List<ParticipationRequestDto> toConfirm = requestsUnconfirmed.subList(
+        List<ParticipationRequestDto> toConfirm = requestsPending.subList(
                 0, availableSlots);
 
-        List<Long> toConfirmIds = toConfirm.stream()
-                .map(ParticipationRequestDto::getId).toList();
-
-        requestService.setStatusAll(toConfirmIds, RequestStatus.CONFIRMED.toString());
-
-        List<ParticipationRequestDto> toReject = List.of();
-        if (availableSlots < requestsUnconfirmed.size()) {
-            toReject = requestsUnconfirmed.subList(
-                    availableSlots, requestsUnconfirmed.size());
-
-            List<Long> toRejectIds = toConfirm.stream()
+        if (toConfirm.size() > 0) {
+            List<Long> toConfirmIds = toConfirm.stream()
                     .map(ParticipationRequestDto::getId).toList();
 
-            requestService.setStatusAll(toRejectIds, RequestStatus.REJECTED.toString());
-        }
+            requestService.setStatusAll(toConfirmIds, RequestStatus.CONFIRMED.toString());
 
-        requestsConfirmed.addAll(toConfirm);
-        setConfirmedRequestsCount(event.getInitiatorId(), (long) requestsConfirmed.size());
-        result.setConfirmedRequests(requestsConfirmed);
-        result.setRejectedRequests(toReject);
+            List<ParticipationRequestDto> toReject = List.of();
+            if (availableSlots < requestsPending.size()) {
+                toReject = requestsPending.subList(
+                        availableSlots, requestsPending.size());
+
+                List<Long> toRejectIds = toConfirm.stream()
+                        .map(ParticipationRequestDto::getId).toList();
+
+                requestService.setStatusAll(toRejectIds, REJECTED);
+            }
+
+            requestsConfirmed.addAll(toConfirm);
+            setConfirmedRequestsCount(event.getInitiatorId(), (long) requestsConfirmed.size());
+            result.setConfirmedRequests(requestsConfirmed);
+            result.setRejectedRequests(toReject);
+        }
         return result;
     }
 

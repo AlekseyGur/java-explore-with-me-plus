@@ -1,5 +1,6 @@
 package ru.practicum.main.event.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -9,6 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import io.micrometer.common.lang.Nullable;
 import ru.practicum.main.event.dto.*;
 import ru.practicum.main.event.service.EventService;
 import ru.practicum.main.request.dto.ParticipationRequestDto;
@@ -41,8 +44,6 @@ public class EventPrivateController {
     @GetMapping("/{eventId}")
     public EventDto getEventById(@PathVariable Long userId,
             @PathVariable Long eventId) {
-
-        // eventService.increaseViews(eventId);
         return eventService.getByEventIdAndUserId(eventId, userId);
 
     }
@@ -57,11 +58,11 @@ public class EventPrivateController {
 
     @PatchMapping("/{eventId}/requests")
     public EventRequestStatusUpdateResult updateRequests(
-                    @PathVariable Long userId,
-            @PathVariable Long eventId,
-            @RequestBody EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest) {
-        return eventService.updateRequestsStatus(eventId, userId,
-                        eventRequestStatusUpdateRequest);
+            @PathVariable Long userId,
+                    @PathVariable Long eventId,
+            @RequestBody EventRequestStatusUpdateRequest req,
+            HttpServletRequest request) {
+        return eventService.updateRequestsStatus(eventId, userId, req);
     }
 
     @GetMapping("/{eventId}/requests")
