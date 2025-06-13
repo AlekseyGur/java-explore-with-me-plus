@@ -19,15 +19,17 @@ public interface EventService {
 
     boolean existsById(Long id);
 
+    boolean checkEventsExistInCategory(Long categoryId);
+
     EventDto create(Long userId, NewEventDto newEventDto);
 
     EventDto getByEventIdAndUserId(Long eventId, Long userId);
 
     Page<EventShortDto> getByUserId(Long userId, Pageable pageable);
 
-    EventDto updateAdmin(Long eventId, UpdateEventDto updated);
+    EventDto updateByAdmin(Long eventId, UpdateEventDto updated);
 
-    EventDto updateUser(Long eventId, Long userId, UpdateEventDto updated);
+    EventDto updateByUser(Long eventId, Long userId, UpdateEventDto updated);
 
     boolean existsByIdAndInitiatorId(Long eventId, Long userId);
 

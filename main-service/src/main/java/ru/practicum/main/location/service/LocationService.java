@@ -7,7 +7,7 @@ import ru.practicum.main.location.dto.LocationUpdateDto;
 import java.util.List;
 
 public interface LocationService {
-    LocationDto getByLonLat(Float lon, Float lat);
+    LocationDto getByLonAndLat(Float lon, Float lat);
 
     LocationDto findById(Long id);
 
@@ -20,4 +20,8 @@ public interface LocationService {
     void delete(Long id);
 
     boolean existsById(Long id);
+
+    boolean existsByLonAndLat(Float lon, Float lat);
+
+    List<LocationDto> get(List<Long> ids);
 }

@@ -16,7 +16,7 @@ public interface RequestService {
 
     ParticipationRequestDto cancelRequest(Long userId, Long requestId);
 
-    Map<Long, Integer> getConfirmedEventsRequestsCount(List<Long> eventsIds);
+    Map<Long, Long> getConfirmedEventsRequestsCount(List<Long> eventsIds);
 
     List<ParticipationRequestDto> findByEventIdAndIdIn(Long eventId, List<Long> requestsId);
 

@@ -97,13 +97,13 @@ public class RequestServiceImpl implements RequestService {
 
     @Override
     @Transactional(readOnly = true)
-    public Map<Long, Integer> getConfirmedEventsRequestsCount(List<Long> eventsIds) {
+    public Map<Long, Long> getConfirmedEventsRequestsCount(List<Long> eventsIds) {
         return requestRepository.getCountByEventIdInAndStatus(
                 eventsIds,
                 RequestStatus.CONFIRMED.toString()).entrySet().stream()
                 .collect(Collectors.toMap(
                         entry -> entry.getKey(),
-                        entry -> entry.getValue().intValue()));
+                        entry -> entry.getValue()));
     }
 
     @Override

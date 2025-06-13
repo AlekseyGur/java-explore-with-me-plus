@@ -8,12 +8,12 @@ import org.springframework.data.jpa.domain.Specification;
 import ru.practicum.main.event.model.Event;
 
 class EventSpecs {
-    public Specification<Event> hasText(String text) {
-        return (root, query, cb) -> cb.like(root.get("name"), "%" + text + "%");
+    public Specification<Event> hasTitle(String text) {
+        return (root, query, cb) -> cb.like(root.get("title"), "%" + text + "%");
     }
 
     public Specification<Event> hasCategories(List<Long> categories) {
-        return (root, query, cb) -> root.get("category").in(categories);
+        return (root, query, cb) -> root.get("categoryId").in(categories);
     }
 
     public Specification<Event> hasPaid(Boolean paid) {
@@ -29,8 +29,10 @@ class EventSpecs {
         return (root, query, cb) -> cb.lessThanOrEqualTo(root.get("eventDate"), end);
     }
 
-    public Specification<Event> hasAvailable(Boolean available) {
-        return (root, query, cb) -> cb.equal(root.get("available"), available);
+    public Specification<Event> hasAvailable() {
+        return (root, query, cb) -> cb.greaterThan(
+                root.get("participantLimit"),
+                root.get("confirmedRequests"));
     }
 
     public Specification<Event> hasUsers(List<Long> users) {

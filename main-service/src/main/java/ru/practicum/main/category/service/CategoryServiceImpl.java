@@ -9,6 +9,9 @@ import ru.practicum.main.category.dto.CategoryDto;
 import ru.practicum.main.category.model.Category;
 import ru.practicum.main.category.mapper.CategoryMapper;
 import ru.practicum.main.category.repository.CategoryRepository;
+import ru.practicum.main.event.service.EventServiceHelper;
+import ru.practicum.main.system.exception.ConditionsNotMetException;
+import ru.practicum.main.system.exception.DuplicatedDataException;
 import ru.practicum.main.system.exception.NotFoundException;
 
 import java.util.List;
@@ -18,6 +21,7 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepository categoryRepository;
+    private final EventServiceHelper eventServiceHelper;
 
     @Override
     public List<CategoryDto> findAll(Integer from, Integer size) {
@@ -43,6 +47,9 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public CategoryDto create(CategoryDto dto) {
         Category category = CategoryMapper.fromDto(dto);
+
+        checkExistsByNameThrowError(dto.getName());
+
         return CategoryMapper.toDto(categoryRepository.save(category));
     }
 
@@ -51,6 +58,9 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryDto update(Long id, CategoryDto dto) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Категория с таким id не найдена"));
+
+        checkExistsByNameThrowError(dto.getName());
+
         category.setName(dto.getName());
         return CategoryMapper.toDto(categoryRepository.save(category));
     }
@@ -61,11 +71,20 @@ public class CategoryServiceImpl implements CategoryService {
         if (!categoryRepository.existsById(id)) {
             throw new NotFoundException("Категория с таким id не найдена");
         }
+        if (eventServiceHelper.checkEventsExistInCategory(id)) {
+            throw new ConditionsNotMetException("Нельзя удалить категорию с событиями");
+        }
         categoryRepository.deleteById(id);
     }
 
     @Override
     public boolean existsById(Long id) {
         return categoryRepository.existsById(id);
+    }
+
+    private void checkExistsByNameThrowError(String name) {
+        if (categoryRepository.existsByName(name)) {
+            throw new DuplicatedDataException("Категория с таким именем уже существует");
+        }
     }
 }

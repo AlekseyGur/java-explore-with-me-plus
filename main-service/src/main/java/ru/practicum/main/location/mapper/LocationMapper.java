@@ -41,6 +41,13 @@ public class LocationMapper {
         return location;
     }
 
+    public static LocationNewDto fromUpdateToNew(LocationUpdateDto locationDto) {
+        LocationNewDto location = new LocationNewDto();
+        location.setLat(locationDto.getLat());
+        location.setLon(locationDto.getLon());
+        return location;
+    }
+
     public static List<Location> fromDto(List<LocationDto> locationsDto) {
         return locationsDto.stream().map(LocationMapper::fromDto).toList();
     }

@@ -12,33 +12,33 @@ import java.util.List;
 @Setter
 @Builder
 public class EventFilter {
-    String text;
+    private String text;
 
-    List<Long> categories;
+    private List<Long> categories;
 
-    Boolean paid;
-
-    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    LocalDateTime rangeStart;
+    private Boolean paid;
 
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    LocalDateTime rangeEnd;
+    private LocalDateTime rangeStart;
+
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime rangeEnd;
 
     @Pattern(regexp = "EVENT_DATE|VIEWS")
-    String sort;
+    private String sort;
 
     @PositiveOrZero
-    Integer from;
+    private Integer from;
 
     @PositiveOrZero
-    Integer size;
+    private Integer size;
 
     Boolean onlyAvailable;
 
-    List<String> states;
+    private List<String> states;
 
-    List<Long> users;
+    private List<Long> users;
 
     @Builder.Default
-    Boolean isDtoForAdminApi = false;
+    private Boolean isDtoForAdminApi = false;
 }
