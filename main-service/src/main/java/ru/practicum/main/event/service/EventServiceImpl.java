@@ -7,6 +7,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import lombok.AllArgsConstructor;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -40,7 +41,7 @@ import ru.practicum.main.request.dto.ParticipationRequestDto;
 import ru.practicum.main.request.enums.RequestStatus;
 import ru.practicum.main.request.service.RequestService;
 import ru.practicum.main.system.exception.AccessDeniedException;
-import ru.practicum.main.system.exception.ConditionsNotMetException;
+import ru.practicum.main.system.exception.BadConditionsException;
 import ru.practicum.main.system.exception.ConstraintViolationException;
 import ru.practicum.main.system.exception.NotFoundException;
 import ru.practicum.main.user.dto.UserDto;
@@ -50,7 +51,7 @@ import ru.practicum.main.views.service.ViewService;
 
 @Service
 @AllArgsConstructor
-@Transactional(readOnly = true)
+@Transactional
 public class EventServiceImpl implements EventService {
 
     private final EventRepository eventRepository;
@@ -119,11 +120,15 @@ public class EventServiceImpl implements EventService {
         event.setInitiatorId(userId);
         event.setCategoryId(newEventDto.getCategory());
         event.setLocationId(locationService.create(newEventDto.getLocation()).getId());
+        event.setState(EventState.PENDING.toString());
+        event.setCreatedOn(LocalDateTime.now());
         if (event.getParticipantLimit() == 0) {
             event.setState(EventState.PUBLISHED.toString());
         }
 
-        return addInfo(eventRepository.save(event));
+        EventDto res = addInfo(eventRepository.save(event));
+        eventRepository.flush();
+        return res;
     }
 
     @Override
@@ -150,6 +155,7 @@ public class EventServiceImpl implements EventService {
         viewService.add(eventId, ip);
         ViewStatDto views = viewService.stat(eventId);
         eventRepository.setViews(eventId, views.getViews());
+        eventRepository.flush();
     }
 
     @Override
@@ -227,18 +233,17 @@ public class EventServiceImpl implements EventService {
 
         checkDateIsGoodThrowError(updated.getEventDate());
 
-
         Event event;
-        if (!isAdminEditThis) {
-            event = eventRepository.findByIdAndInitiatorId(eventId, userId)
-                .orElseThrow(() -> new NotFoundException("Собатиые не найдено"));
-        } else {
+        if (isAdminEditThis) {
             event = eventRepository.findById(eventId)
                     .orElseThrow(() -> new NotFoundException("Собатиые не найдено"));
-        }
+        } else {
+            event = eventRepository.findByIdAndInitiatorId(eventId, userId)
+                    .orElseThrow(() -> new NotFoundException("Собатиые не найдено"));
 
-        if (event.getState().equals(EventState.PUBLISHED.toString())) {
-            throw new AccessDeniedException("Невозможно имзенить опубликованное событие");
+            if (event.getState().equals(EventState.PUBLISHED.toString())) {
+                throw new BadConditionsException("Нельзя изменить уже опубликованное событие");
+            }
         }
 
         checkDateIsGoodThrowError(event.getEventDate());
@@ -254,21 +259,24 @@ public class EventServiceImpl implements EventService {
             updateEventLocationOrCreateNew(event, updated.getLocation());
         }
 
+
         if (action != null) {
-            if (event.getParticipantLimit() == 0) {
-                event.setState(EventState.PUBLISHED.toString());
-            }
-
             if (isAdminEditThis) {
-
                 if (action.equals(StateAction.PUBLISH_EVENT.toString())
                         && event.getState().equals(EventState.PUBLISHED.toString())) {
-                    throw new ConstraintViolationException("Нельзя опубликовать уже опубликованное событие");
+                    throw new BadConditionsException("Нельзя опубликовать уже опубликованное событие");
+                }
+                if (action.equals(StateAction.PUBLISH_EVENT.toString())
+                        && event.getState().equals(EventState.CANCELED.toString())) {
+                    throw new BadConditionsException("Нельзя опубликовать уже отменённое событие");
                 }
 
                 if (action.equals(StateAction.PUBLISH_EVENT.toString())) {
                     event.setState(EventState.PUBLISHED.toString());
                 } else if (action.equals(StateAction.REJECT_EVENT.toString())) {
+                    if (event.getState().equals(EventState.PUBLISHED.toString())) {
+                        throw new BadConditionsException("Нельзя отменить уже опубликованное событие");
+                    }
                     event.setState(EventState.CANCELED.toString());
                 }
             } else {
@@ -280,7 +288,9 @@ public class EventServiceImpl implements EventService {
             }
         }
 
-        return addInfo(eventRepository.save(event));
+        Event res = eventRepository.save(event);
+        eventRepository.flush();
+        return addInfo(res);
     }
 
     @Override
@@ -289,15 +299,21 @@ public class EventServiceImpl implements EventService {
             EventRequestStatusUpdateRequest updateRequest) {
 
         final String REJECTED = RequestStatus.REJECTED.toString();
+        final String CONFIRMED = RequestStatus.CONFIRMED.toString();
         String setStatus = RequestStatus.valueOf(updateRequest.getStatus()).toString();
 
         UserDto user = userService.get(userId);
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException("Событие с таким id не найдено"));
+        EventDto event = get(eventId);
 
-        if (!event.getInitiatorId().equals(user.getId()))
+        if (setStatus.equals(CONFIRMED) && event.getConfirmedRequests() >= event.getParticipantLimit()) {
+            throw new BadConditionsException(
+                    "Нельзя принять ещё одного участника, достигнут лимит");
+        }
+
+        if (!event.getInitiatorId().equals(user.getId())) {
             throw new AccessDeniedException(
                     "Пользователь может изменять статус только событиям, которые он сделал сам");
+        }
 
         // если для события лимит заявок равен 0 или отключена пре-модерация заявок, то
         // подтверждение заявок не требуется
@@ -311,7 +327,7 @@ public class EventServiceImpl implements EventService {
                 .findByEventIdAndIdIn(eventId, requestsIds);
 
         if (requests.stream().anyMatch(x -> x.getStatus().equals(REJECTED))) {
-            throw new ConditionsNotMetException(
+            throw new BadConditionsException(
                     "Статус можно изменить только у заявок, находящихся в состоянии ожидания");
         }
 
@@ -332,7 +348,7 @@ public class EventServiceImpl implements EventService {
 
         int availableSlots = (int) (event.getParticipantLimit() - requestsConfirmed.size());
         if (availableSlots < 1L) {
-            throw new ConditionsNotMetException(
+            throw new BadConditionsException(
                     "Нельзя подтвердить заявку, если уже достигнут лимит по заявкам на данное событие");
         }
         if (availableSlots > requestsPending.size()) {
@@ -364,6 +380,8 @@ public class EventServiceImpl implements EventService {
             result.setConfirmedRequests(requestsConfirmed);
             result.setRejectedRequests(toReject);
         }
+
+        eventRepository.flush();
         return result;
     }
 
@@ -381,11 +399,13 @@ public class EventServiceImpl implements EventService {
         return requestService.getByEventId(eventId);
     }
 
-    private void setConfirmedRequestsCount(Long eventId, Long requestsCount) {
+    @Transactional
+    public void setConfirmedRequestsCount(Long eventId, Long requestsCount) {
         eventRepository.setContirmedRequestsCount(eventId, requestsCount);
+        eventRepository.flush();
     }
 
-    private List<EventDto> addInfo(List<Event> events) {
+    public List<EventDto> addInfo(List<Event> events) {
         List<Long> eventsIds = events.stream().map(Event::getId).toList();
         List<Long> categoryIds = events.stream().map(Event::getCategoryId).toList();
         List<Long> usersIds = events.stream().map(Event::getInitiatorId).toList();
@@ -395,6 +415,11 @@ public class EventServiceImpl implements EventService {
         List<UserDto> users = userService.get(usersIds);
         List<LocationDto> locations = locationService.get(locationsIds);
         Map<Long, Long> requests = requestService.getConfirmedEventsRequestsCount(eventsIds);
+
+        System.out.println("BEFORE ============================");
+
+        System.out.println(requests.toString());
+        System.out.println("BEFORE ============================");
 
         Map<Long, CategoryDto> catsByIds = categories.stream()
                 .collect(Collectors.toMap(CategoryDto::getId, Function.identity()));
@@ -417,6 +442,10 @@ public class EventServiceImpl implements EventService {
                 .toList();
     }
 
+    public EventDto addInfo(Event event) {
+        return addInfo(List.of(event)).get(0);
+    }
+
     private void updateEventLocationOrCreateNew(Event event, LocationUpdateDto location) {
         Float lon = location.getLon();
         Float lat = location.getLat();
@@ -428,10 +457,6 @@ public class EventServiceImpl implements EventService {
             LocationNewDto locationNew = LocationMapper.fromUpdateToNew(location);
             event.setLocationId(locationService.create(locationNew).getId());
         }
-    }
-
-    private EventDto addInfo(Event event) {
-        return addInfo(List.of(event)).get(0);
     }
 
     private void checkDateIsGoodThrowError(LocalDateTime date) {

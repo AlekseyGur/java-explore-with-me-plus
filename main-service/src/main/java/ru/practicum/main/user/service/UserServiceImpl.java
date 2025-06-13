@@ -46,13 +46,16 @@ public class UserServiceImpl implements UserService {
             user.setName("Unnamed");
         }
 
-        return UserMapper.toDto(userRepository.save(user));
+        User userSaved = userRepository.save(user);
+        userRepository.flush();
+        return UserMapper.toDto(userSaved);
     }
 
     @Override
     @Transactional
     public void delete(Long id) {
         userRepository.deleteById(id);
+        userRepository.flush();
     }
 
     @Override
@@ -89,6 +92,8 @@ public class UserServiceImpl implements UserService {
             userSaved.setName(user.getName());
         }
 
-        return UserMapper.toDto(userRepository.save(userSaved));
+        User userLoad = userRepository.save(userSaved);
+        userRepository.flush();
+        return UserMapper.toDto(userLoad);
     }
 }

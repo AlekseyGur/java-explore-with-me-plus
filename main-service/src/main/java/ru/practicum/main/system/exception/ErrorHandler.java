@@ -37,7 +37,7 @@ public class ErrorHandler {
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ApiError conditionsNotMetException(final ConditionsNotMetException e) {
+    public ApiError conditionsNotMetException(final BadConditionsException e) {
         String reason = "Условия не выполнены";
         log.error(reason + ". " + e.getMessage());
         return new ApiError(HttpStatus.CONFLICT, reason, e.getMessage());

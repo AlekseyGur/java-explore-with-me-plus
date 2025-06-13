@@ -4,10 +4,8 @@ import lombok.experimental.UtilityClass;
 import ru.practicum.main.event.dto.EventShortDto;
 import ru.practicum.main.event.dto.NewEventDto;
 import ru.practicum.main.event.model.Event;
-import ru.practicum.main.event.model.EventState;
 import ru.practicum.main.event.dto.EventDto;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @UtilityClass
@@ -70,8 +68,6 @@ public class EventMapper {
                 .confirmedRequests(0L)
                 .requestModeration(event.getRequestModeration())
                 .eventDate(event.getEventDate())
-                .state(EventState.PENDING.toString())
-                .createdOn(LocalDateTime.now())
                 .views(0L)
                 .build();
     }

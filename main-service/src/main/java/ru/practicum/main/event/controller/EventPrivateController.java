@@ -11,7 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import io.micrometer.common.lang.Nullable;
 import ru.practicum.main.event.dto.*;
 import ru.practicum.main.event.service.EventService;
 import ru.practicum.main.request.dto.ParticipationRequestDto;

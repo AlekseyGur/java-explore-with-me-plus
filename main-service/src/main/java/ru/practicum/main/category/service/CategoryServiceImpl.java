@@ -10,7 +10,7 @@ import ru.practicum.main.category.model.Category;
 import ru.practicum.main.category.mapper.CategoryMapper;
 import ru.practicum.main.category.repository.CategoryRepository;
 import ru.practicum.main.event.service.EventServiceHelper;
-import ru.practicum.main.system.exception.ConditionsNotMetException;
+import ru.practicum.main.system.exception.BadConditionsException;
 import ru.practicum.main.system.exception.DuplicatedDataException;
 import ru.practicum.main.system.exception.NotFoundException;
 
@@ -72,7 +72,7 @@ public class CategoryServiceImpl implements CategoryService {
             throw new NotFoundException("Категория с таким id не найдена");
         }
         if (eventServiceHelper.checkEventsExistInCategory(id)) {
-            throw new ConditionsNotMetException("Нельзя удалить категорию с событиями");
+            throw new BadConditionsException("Нельзя удалить категорию с событиями");
         }
         categoryRepository.deleteById(id);
     }
