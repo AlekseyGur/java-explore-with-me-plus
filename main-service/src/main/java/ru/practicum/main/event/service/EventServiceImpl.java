@@ -35,7 +35,6 @@ import ru.practicum.main.location.dto.LocationDto;
 import ru.practicum.main.location.dto.LocationNewDto;
 import ru.practicum.main.location.dto.LocationUpdateDto;
 import ru.practicum.main.location.mapper.LocationMapper;
-import ru.practicum.main.location.model.Location;
 import ru.practicum.main.location.service.LocationService;
 import ru.practicum.main.request.dto.ParticipationRequestDto;
 import ru.practicum.main.request.enums.RequestStatus;
@@ -46,6 +45,8 @@ import ru.practicum.main.system.exception.ConstraintViolationException;
 import ru.practicum.main.system.exception.NotFoundException;
 import ru.practicum.main.user.dto.UserDto;
 import ru.practicum.main.user.service.UserService;
+import ru.practicum.main.views.dto.ViewStatDto;
+import ru.practicum.main.views.service.ViewService;
 
 @Service
 @AllArgsConstructor
@@ -57,11 +58,12 @@ public class EventServiceImpl implements EventService {
     private final UserService userService;
     private final CategoryService categoryService;
     private final LocationService locationService;
+    private final ViewService viewService;
     private final static int MINIMAL_MINUTES_FOR_CHANGES = 1;
 
     @Override
     public EventDto get(Long eventId) {
-        EventDto event = eventRepository.findByIdAndState(eventId, EventState.PUBLISHED.toString())
+        EventDto event = eventRepository.findById(eventId)
                 .map(this::addInfo)
                 .orElseThrow(() -> new NotFoundException("Событие с таким id не найдено"));
         return event;
@@ -69,6 +71,19 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public List<EventDto> get(List<Long> eventIds) {
+        return addInfo(eventRepository.findByIdIn(eventIds));
+    }
+
+    @Override
+    public EventDto getPublished(Long eventId) {
+        EventDto event = eventRepository.findByIdAndState(eventId, EventState.PUBLISHED.toString())
+                .map(this::addInfo)
+                .orElseThrow(() -> new NotFoundException("Событие с таким id не найдено"));
+        return event;
+    }
+
+    @Override
+    public List<EventDto> getPublished(List<Long> eventIds) {
         return addInfo(eventRepository.findByIdInAndState(eventIds, EventState.PUBLISHED.toString()));
     }
 
@@ -124,11 +139,13 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    public void increaseViews(Long id) {
-        if (!existsById(id)) {
-            throw new NotFoundException("Собатиые не найдено");
+    public void increaseViews(Long eventId, String ip) {
+        if (!existsById(eventId)) {
+            throw new NotFoundException("Событие не найдено");
         }
-        eventRepository.increaseViews(id);
+        viewService.add(eventId, ip);
+        ViewStatDto views = viewService.stat(eventId);
+        eventRepository.setViews(eventId, views.getViews());
     }
 
     @Override

@@ -67,7 +67,7 @@ public class EventPublicController {
 
         @GetMapping(path = "/{eventId}")
         @ResponseStatus(HttpStatus.OK)
-        public EventDto getById(@PathVariable long eventId, HttpServletRequest request) {
+        public EventDto getById(@PathVariable Long eventId, HttpServletRequest request) {
 
                 HitDto hitDto = HitDto.builder()
                                 .app("ewm-main-service")
@@ -77,6 +77,7 @@ public class EventPublicController {
                                 .build();
                 statsClient.hit(hitDto);
 
+                eventService.increaseViews(eventId, request.getRemoteAddr());
                 return eventService.get(eventId);
         }
 }

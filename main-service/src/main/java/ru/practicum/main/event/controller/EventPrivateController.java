@@ -41,6 +41,8 @@ public class EventPrivateController {
     @GetMapping("/{eventId}")
     public EventDto getEventById(@PathVariable Long userId,
             @PathVariable Long eventId) {
+
+        // eventService.increaseViews(eventId);
         return eventService.getByEventIdAndUserId(eventId, userId);
 
     }
