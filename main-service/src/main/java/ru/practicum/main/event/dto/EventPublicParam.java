@@ -18,17 +18,25 @@ import java.util.Collection;
 public class EventPublicParam {
     @NotNull
     String text;
-    Collection<Long> categories;
-    Boolean paid;
+
+    private Collection<Long> categories;
+
+    private Boolean paid;
+
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    LocalDateTime rangeStart;
+    private LocalDateTime rangeStart;
+
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    LocalDateTime rangeEnd;
-    Boolean onlyAvailable;
+    private LocalDateTime rangeEnd;
+
+    private Boolean onlyAvailable;
+
     @Pattern(regexp = "EVENT_DATE|VIEWS")
-    String sort;
+    private String sort;
+
     @PositiveOrZero
-    Long from;
+    private Long from;
+
     @PositiveOrZero
-    Long size;
+    private Long size;
 }

@@ -5,7 +5,6 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
 
 import lombok.extern.slf4j.Slf4j;
 import ru.practicum.dto.HitDto;
@@ -32,7 +31,7 @@ public class StatClient {
                     .body(hitDto)
                     .retrieve()
                     .toBodilessEntity();
-        } catch (RestClientException e) {
+        } catch (Exception e) {
             log.error("Ошибка при отправке hit");
         }
     }
@@ -53,7 +52,7 @@ public class StatClient {
                     .retrieve()
                     .body(new ParameterizedTypeReference<List<StatDto>>() {
                     });
-        } catch (RestClientException e) {
+        } catch (Exception e) {
             log.error("Ошибка при получении статистики");
         }
         return List.of();

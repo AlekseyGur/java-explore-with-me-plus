@@ -16,10 +16,20 @@ public class EventMapper {
     public static EventDto toDto(Event event) {
         return EventDto.builder()
                 .id(event.getId())
+                .title(event.getTitle())
                 .annotation(event.getAnnotation())
+                .description(event.getDescription())
+                .categoryId(event.getCategoryId())
                 .eventDate(event.getEventDate())
+                .initiatorId(event.getInitiatorId())
+                .participantLimit(event.getParticipantLimit())
+                .confirmedRequests(event.getConfirmedRequests())
+                .requestModeration(event.getRequestModeration())
                 .paid(event.getPaid())
                 .title(event.getTitle())
+                .views(event.getViews())
+                .state(event.getState())
+                .createdOn(event.getCreatedOn())
                 .views(event.getViews())
                 .build();
     }
@@ -59,6 +69,7 @@ public class EventMapper {
                 .categoryId(event.getCategory())
                 .paid(event.getPaid())
                 .participantLimit(event.getParticipantLimit())
+                .confirmedRequests(0L)
                 .requestModeration(event.getRequestModeration())
                 .eventDate(event.getEventDate())
                 .state(EventState.PENDING.toString())

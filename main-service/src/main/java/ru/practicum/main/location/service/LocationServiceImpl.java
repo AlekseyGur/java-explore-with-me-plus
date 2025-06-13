@@ -23,10 +23,10 @@ public class LocationServiceImpl implements LocationService {
     private final LocationRepository locationRepository;
 
     @Override
-    public LocationDto getByLonLat(Float lon, Float lat) {
+    public LocationDto getByLonAndLat(Float lon, Float lat) {
         return locationRepository.findByLonAndLat(lon, lat)
                 .map(LocationMapper::toDto)
-                .orElseThrow(() -> new NotFoundException("Место с таким id не найдено"));
+                .orElseThrow(() -> new NotFoundException("Место с таким lon-lat не найдено"));
     }
 
     @Override
@@ -42,6 +42,11 @@ public class LocationServiceImpl implements LocationService {
         Location location = locationRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Место с таким id не найдено"));
         return LocationMapper.toDto(location);
+    }
+
+    @Override
+    public List<LocationDto> get(List<Long> ids) {
+        return locationRepository.getByIdIn(ids).stream().map(LocationMapper::toDto).toList();
     }
 
     @Override
@@ -76,5 +81,10 @@ public class LocationServiceImpl implements LocationService {
     @Override
     public boolean existsById(Long id) {
         return locationRepository.existsById(id);
+    }
+
+    @Override
+    public boolean existsByLonAndLat(Float lon, Float lat) {
+        return locationRepository.existsByLonAndLat(lon, lat);
     }
 }

@@ -2,11 +2,12 @@ package ru.practicum.main.event.dto;
 
 import lombok.*;
 import ru.practicum.main.category.dto.CategoryDto;
-import ru.practicum.main.event.model.EventState;
 import ru.practicum.main.location.dto.LocationDto;
 import ru.practicum.main.user.dto.UserDto;
 
 import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 @Getter
 @Setter
@@ -22,7 +23,7 @@ public class EventDto {
 
     private CategoryDto category;
 
-    private Integer confirmedRequests;
+    private Long confirmedRequests;
 
     private LocalDateTime createdOn;
 
@@ -30,6 +31,7 @@ public class EventDto {
 
     private String description;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime eventDate;
 
     private Long initiatorId;
@@ -44,7 +46,7 @@ public class EventDto {
 
     private Boolean requestModeration;
 
-    private EventState state;
+    private String state;
 
     private String title;
 

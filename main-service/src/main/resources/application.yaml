@@ -4,9 +4,10 @@ server:
 
 logging:
   level:
-    root: ERROR
+    root: INFO
     org:
-      springframework: ERROR
+      springframework: INFO
+      hibernate: INFO
 
 spring:
   main:
@@ -22,7 +23,7 @@ spring:
       max-request-size: 10MB
 
 ---
-# Профиль prod
+# Профиль mvn spring-boot:run -Dspring-boot.run.profiles=prod
 spring:
   config:
     activate:
@@ -34,6 +35,10 @@ spring:
     username: dbuser
     password: 12345
   
+  sql:
+    init:
+      mode: always
+  
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     show-sql: false
@@ -44,44 +49,37 @@ spring:
         format_sql: true
         jdbc:
           timezone: UTC
-  
-  sql:
-    init:
-      mode: always
+
 
 ---
-# Профиль test
-logging:
-  level:
-    root: ERROR
-    org:
-      springframework: ERROR
-
+# Профиль mvn spring-boot:run -Dspring-boot.run.profiles=dev
 spring:
   config:
     activate:
-      on-profile: test
+      on-profile: dev
 
   datasource:
     driverClassName: org.h2.Driver
-    url: jdbc:h2:mem:ewm_db;MODE=MySQL
-    username: dbuser
-    password: 12345
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=MySQL
+    username: admin
+    password: 
 
   sql:
     init:
       mode: always
 
-  jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
-    hibernate:
-      ddl-auto: none
-    properties:
-      hibernate:
-        format_sql: true
-        show_sql: true
-  
   h2:
     console:
       enabled: true
       path: /h2-console
+
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: false
+        jdbc:
+          timezone: UTC

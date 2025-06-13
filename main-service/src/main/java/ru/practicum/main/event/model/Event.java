@@ -7,55 +7,60 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 @Builder
 @Entity
 @Table(name = "events")
 public class Event {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @jakarta.persistence.Column(name = "id")
-    Long id;
+    private Long id;
 
     @Column(name = "title")
-    String title;
+    private String title;
 
+    @Lob
     @Column(name = "annotation")
-    String annotation;
+    private String annotation;
 
+    @Lob
     @Column(name = "description")
-    String description;
+    private String description;
 
     @Column(name = "event_date")
-    LocalDateTime eventDate;
+    private LocalDateTime eventDate;
 
     @Column(name = "location_id")
-    Long locationId;
+    private Long locationId;
 
     @Column(name = "category_id")
-    Long categoryId;
+    private Long categoryId;
 
     @Column(name = "initiator_id")
-    Long initiatorId;
+    private Long initiatorId;
 
     @Column(name = "paid")
-    Boolean paid;
+    private Boolean paid;
 
     @Column(name = "participant_limit")
-    Long participantLimit;
+    private Long participantLimit;
+
+    @Column(name = "confirmed_requests")
+    private Long confirmedRequests;
 
     @Column(name = "request_moderation")
-    Boolean requestModeration;
+    private Boolean requestModeration;
 
     @Column(name = "state")
-    String state;
+    private String state;
 
     @Column(name = "created_on")
-    LocalDateTime createdOn;
+    private LocalDateTime createdOn;
 
     @Column(name = "published_on")
-    LocalDateTime publishedOn;
+    private LocalDateTime publishedOn;
 
     @Column(name = "views")
-    Long views;
+    private Long views;
 }
