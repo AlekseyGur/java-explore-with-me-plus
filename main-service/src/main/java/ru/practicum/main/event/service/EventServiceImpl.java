@@ -1,6 +1,7 @@
 package ru.practicum.main.event.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -10,10 +11,7 @@ import lombok.AllArgsConstructor;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +27,7 @@ import ru.practicum.main.event.dto.UpdateEventDto;
 import ru.practicum.main.event.mapper.EventMapper;
 import ru.practicum.main.event.model.Event;
 import ru.practicum.main.event.model.EventState;
+import ru.practicum.main.event.model.QEvent;
 import ru.practicum.main.event.model.StateAction;
 import ru.practicum.main.event.model.StateActionUser;
 import ru.practicum.main.event.repository.EventRepository;
@@ -48,6 +47,9 @@ import ru.practicum.main.user.dto.UserDto;
 import ru.practicum.main.user.service.UserService;
 import ru.practicum.main.views.dto.ViewStatDto;
 import ru.practicum.main.views.service.ViewService;
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.impl.JPAQuery;
+import com.querydsl.jpa.impl.JPAQueryFactory;
 
 @Service
 @AllArgsConstructor
@@ -60,6 +62,7 @@ public class EventServiceImpl implements EventService {
     private final CategoryService categoryService;
     private final LocationService locationService;
     private final ViewService viewService;
+    private final JPAQueryFactory queryFactory;
     private static final int MINIMAL_MINUTES_FOR_CHANGES = 1;
 
     @Override
@@ -168,72 +171,71 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public Page<EventShortDto> getByFilter(EventFilter filter) {
-
+    public List<EventShortDto> getByFilter(EventFilter filter) {
         checkFilterDateRangeIsGood(filter.getRangeStart(), filter.getRangeEnd());
 
-        EventSpecs e = new EventSpecs();
-        Specification<Event> spec = Specification.where(null);
+        List<Event> events = new ArrayList<>();
+        QEvent event = QEvent.event;
+        BooleanExpression exp = event.state.eq(EventState.PUBLISHED.toString());
 
         if (filter.getText() != null && !filter.getText().isBlank()) {
-            spec = spec.and(e.hasTitle(filter.getText()));
+            exp = exp.and(event.description.containsIgnoreCase(filter.getText()))
+                    .or(event.annotation.containsIgnoreCase(filter.getText()));
         }
 
         if (filter.getCategories() != null) {
-            spec = spec.and(e.hasCategories(filter.getCategories()));
+            exp = exp.and(event.categoryId.in(filter.getCategories()));
         }
 
         if (filter.getPaid() != null) {
-            spec = spec.and(e.hasPaid(filter.getPaid()));
+            exp = exp.and(event.paid.eq(filter.getPaid()));
         }
 
         if (filter.getRangeStart() != null) {
-            spec = spec.and(e.hasRangeStart(filter.getRangeStart()));
+            exp = exp.and(event.eventDate.after(filter.getRangeStart()));
         }
 
         if (filter.getRangeEnd() != null) {
-            spec = spec.and(e.hasRangeEnd(filter.getRangeEnd()));
+            exp = exp.and(event.eventDate.before(filter.getRangeEnd()));
         }
 
         if (filter.getOnlyAvailable() != null) {
-            spec = spec.and(e.hasAvailable());
+            exp = exp.and(event.participantLimit.gt(event.confirmedRequests));
         }
 
         if (filter.getIsDtoForAdminApi()) {
             if (filter.getStates() != null) {
-                spec = spec.and(e.hasStates(filter.getStates()));
+                exp = exp.and(event.state.in(filter.getStates()));
             }
 
             if (filter.getUsers() != null) {
-                spec = spec.and(e.hasUsers(filter.getUsers()));
+                exp = exp.and(event.initiatorId.in(filter.getUsers()));
             }
         }
 
-        Sort sort = Sort.unsorted();
+        JPAQuery<Event> query = queryFactory.selectFrom(event)
+                .where(exp)
+                .offset(filter.getFrom())
+                .limit(filter.getSize());
+
         if ("EVENT_DATE".equals(filter.getSort())) {
-            sort = Sort.by("eventDate").ascending();
+            events = query.orderBy(event.eventDate.asc()).fetch();
         } else {
-            sort = Sort.by("views").descending();
+            events = query.orderBy(event.views.desc()).fetch();
         }
 
-        Pageable pageable = PageRequest.of(
-                filter.getFrom(),
-                filter.getSize(),
-                sort);
-
-        Page<Event> page = eventRepository.findAll(spec, pageable);
-        return new PageImpl<>(
-                EventMapper.toShortDtoFromDto(addInfo(page.getContent())),
-                pageable,
-                page.getTotalElements());
+        return EventMapper.toShortDtoFromDto(addInfo(events));
     }
 
+
     @Override
+    @Transactional
     public EventDto updateByAdmin(Long eventId, UpdateEventDto updated) {
         return update(eventId, null, updated);
     }
 
     @Override
+    @Transactional
     public EventDto updateByUser(Long eventId, Long userId, UpdateEventDto updated) {
         return update(eventId, userId, updated);
     }

@@ -20,12 +20,10 @@ public class Event {
     @Column(name = "title")
     private String title;
 
-    @Lob
-    @Column(name = "annotation")
+    @Column(name = "annotation", columnDefinition = "TEXT")
     private String annotation;
 
-    @Lob
-    @Column(name = "description")
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
     @Column(name = "event_date")

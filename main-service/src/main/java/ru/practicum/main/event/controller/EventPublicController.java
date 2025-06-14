@@ -59,7 +59,7 @@ public class EventPublicController {
                                 .size(size)
                                 .build();
 
-                return eventService.getByFilter(param).getContent();
+                return eventService.getByFilter(param);
         }
 
         @GetMapping(path = "/{eventId}")

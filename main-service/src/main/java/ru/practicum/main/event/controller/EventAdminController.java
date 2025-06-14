@@ -67,7 +67,7 @@ public class EventAdminController {
                 .size(size)
                 .isDtoForAdminApi(true)
                 .build();
-        return eventService.getByFilter(param).getContent();
+        return eventService.getByFilter(param);
     }
 
     @PatchMapping("/{eventId}")

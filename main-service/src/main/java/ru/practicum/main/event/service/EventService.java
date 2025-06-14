@@ -19,7 +19,7 @@ public interface EventService {
 
     List<EventDto> getPublished(List<Long> eventIds);
 
-    Page<EventShortDto> getByFilter(EventFilter filter);
+    List<EventShortDto> getByFilter(EventFilter filter);
 
     void increaseViews(Long eventId, String ip);
 

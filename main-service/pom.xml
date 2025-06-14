@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>main-service</artifactId>
-    <name>Main server</name>
+    <name>main-service</name>
 
     <properties>
         <java.version>21</java.version>
@@ -72,11 +72,24 @@
 
         <dependency>
             <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
+            <artifactId>postgresql</artifactId> 
         </dependency>
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.querydsl</groupId>
+            <artifactId>querydsl-apt</artifactId>
+            <version>5.1.0</version>
+            <classifier>jakarta</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.querydsl</groupId>
+            <artifactId>querydsl-jpa</artifactId>
+            <classifier>jakarta</classifier>
+            <version>5.1.0</version>
         </dependency>
     </dependencies>
 
