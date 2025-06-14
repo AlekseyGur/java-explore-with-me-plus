@@ -112,10 +112,12 @@ public class RequestServiceImpl implements RequestService {
 
     @Override
     public Map<Long, Long> getConfirmedEventsRequestsCount(List<Long> eventsIds) {
-        Map<Long, Long> r = requestRepository.getCountByEventIdInAndStatus(
-                eventsIds,
-                RequestStatus.CONFIRMED.toString());
-        return r;
+        return requestRepository
+                .getCountByEventIdInAndStatus(eventsIds, RequestStatus.CONFIRMED.toString()).stream()
+                .collect(Collectors.toMap(
+                        row -> ((Number) row[0]).longValue(), // извлекаем eventId
+                        row -> ((Number) row[1]).longValue() // извлекаем количество заявок
+                ));
     }
 
     @Override
