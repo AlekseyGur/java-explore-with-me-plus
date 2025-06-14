@@ -1,11 +1,8 @@
 package ru.practicum.main.event.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.constraints.Future;
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
@@ -20,7 +17,6 @@ import ru.practicum.dto.HitDto;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Slf4j
 @RequestMapping(path = "/events")
 @AllArgsConstructor
 @RestController
