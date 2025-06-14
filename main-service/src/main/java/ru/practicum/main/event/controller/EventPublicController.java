@@ -1,11 +1,8 @@
 package ru.practicum.main.event.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.constraints.Future;
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
@@ -20,7 +17,6 @@ import ru.practicum.dto.HitDto;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Slf4j
 @RequestMapping(path = "/events")
 @AllArgsConstructor
 @RestController
@@ -31,13 +27,13 @@ public class EventPublicController {
 
         @GetMapping
         @ResponseStatus(HttpStatus.OK)
-        public Page<EventShortDto> find(
+        public List<EventShortDto> find(
                                         @RequestParam(required = false) String text,
                         @RequestParam(required = false) List<Long> categories,
                         @RequestParam(required = false) Boolean paid,
                         @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeStart,
-                        @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") @Future LocalDateTime rangeEnd,
-                        @RequestParam(defaultValue = "false") Boolean onlyAvailable,
+                        @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeEnd,
+                                        @RequestParam(defaultValue = "false") Boolean onlyAvailable,
                         @RequestParam(required = false) String sort,
                         @RequestParam(defaultValue = "0") Integer from,
                         @RequestParam(defaultValue = "10") Integer size,
@@ -62,12 +58,13 @@ public class EventPublicController {
                                 .from(from)
                                 .size(size)
                                 .build();
-                return eventService.getByFilter(param);
+
+                return eventService.getByFilter(param).getContent();
         }
 
         @GetMapping(path = "/{eventId}")
         @ResponseStatus(HttpStatus.OK)
-        public EventDto getById(@PathVariable long eventId, HttpServletRequest request) {
+        public EventDto getById(@PathVariable Long eventId, HttpServletRequest request) {
 
                 HitDto hitDto = HitDto.builder()
                                 .app("ewm-main-service")
@@ -77,6 +74,7 @@ public class EventPublicController {
                                 .build();
                 statsClient.hit(hitDto);
 
-                return eventService.get(eventId);
+                eventService.increaseViews(eventId, request.getRemoteAddr());
+                return eventService.getPublic(eventId);
         }
 }

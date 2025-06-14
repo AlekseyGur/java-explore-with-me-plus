@@ -2,6 +2,9 @@ package ru.practicum.main.user.controller;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -31,8 +34,12 @@ public class UserController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<UserDto> get(@RequestParam List<Long> ids) {
-        return userService.get(ids);
+    public List<UserDto> get(@RequestParam(required = false) List<Long> ids,
+            @RequestParam(defaultValue = "0") Integer from,
+            @RequestParam(defaultValue = "10") Integer size) {
+        Sort sort = Sort.unsorted();
+        PageRequest pageable = PageRequest.of(from, size, sort);
+        return userService.get(ids, pageable).toList();
     }
 
     @PostMapping

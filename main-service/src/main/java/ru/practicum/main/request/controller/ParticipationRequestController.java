@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.constraints.Positive;
 import ru.practicum.main.event.service.EventService;
 import ru.practicum.main.request.dto.ParticipationRequestDto;
 import ru.practicum.main.request.service.RequestService;
@@ -19,20 +20,21 @@ public class ParticipationRequestController {
     private final EventService eventService;
 
     @GetMapping
-    public List<ParticipationRequestDto> getUserRequests(@PathVariable Long userId) {
+    public List<ParticipationRequestDto> getUserRequests(@PathVariable @Positive Long userId) {
         return requestService.getUserRequests(userId);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ParticipationRequestDto createRequest(
-            @PathVariable Long userId,
-            @RequestParam Long eventId) {
+            @PathVariable @Positive Long userId,
+            @RequestParam @Positive Long eventId) {
         return requestService.createRequest(userId, eventId, eventService.get(eventId));
     }
 
     @PatchMapping("/{requestId}/cancel")
-    public ParticipationRequestDto cancelRequest(@PathVariable Long userId, @PathVariable Long requestId) {
+    public ParticipationRequestDto cancelRequest(@PathVariable @Positive Long userId,
+            @PathVariable @Positive Long requestId) {
         return requestService.cancelRequest(userId, requestId);
     }
 }

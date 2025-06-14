@@ -7,6 +7,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import lombok.AllArgsConstructor;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -35,17 +36,18 @@ import ru.practicum.main.location.dto.LocationDto;
 import ru.practicum.main.location.dto.LocationNewDto;
 import ru.practicum.main.location.dto.LocationUpdateDto;
 import ru.practicum.main.location.mapper.LocationMapper;
-import ru.practicum.main.location.model.Location;
 import ru.practicum.main.location.service.LocationService;
 import ru.practicum.main.request.dto.ParticipationRequestDto;
 import ru.practicum.main.request.enums.RequestStatus;
 import ru.practicum.main.request.service.RequestService;
 import ru.practicum.main.system.exception.AccessDeniedException;
-import ru.practicum.main.system.exception.ConditionsNotMetException;
+import ru.practicum.main.system.exception.BadConditionsException;
 import ru.practicum.main.system.exception.ConstraintViolationException;
 import ru.practicum.main.system.exception.NotFoundException;
 import ru.practicum.main.user.dto.UserDto;
 import ru.practicum.main.user.service.UserService;
+import ru.practicum.main.views.dto.ViewStatDto;
+import ru.practicum.main.views.service.ViewService;
 
 @Service
 @AllArgsConstructor
@@ -57,11 +59,21 @@ public class EventServiceImpl implements EventService {
     private final UserService userService;
     private final CategoryService categoryService;
     private final LocationService locationService;
+    private final ViewService viewService;
     private final static int MINIMAL_MINUTES_FOR_CHANGES = 1;
 
     @Override
+    public EventDto getPublic(Long eventId) {
+        EventDto event = eventRepository.findById(eventId)
+                .filter(x -> x.getState().equals(EventState.PUBLISHED.toString()))
+                .map(this::addInfo)
+                .orElseThrow(() -> new NotFoundException("Событие с таким id не найдено"));
+        return event;
+    }
+
+    @Override
     public EventDto get(Long eventId) {
-        EventDto event = eventRepository.findByIdAndState(eventId, EventState.PUBLISHED.toString())
+        EventDto event = eventRepository.findById(eventId)
                 .map(this::addInfo)
                 .orElseThrow(() -> new NotFoundException("Событие с таким id не найдено"));
         return event;
@@ -69,6 +81,19 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public List<EventDto> get(List<Long> eventIds) {
+        return addInfo(eventRepository.findByIdIn(eventIds));
+    }
+
+    @Override
+    public EventDto getPublished(Long eventId) {
+        EventDto event = eventRepository.findByIdAndState(eventId, EventState.PUBLISHED.toString())
+                .map(this::addInfo)
+                .orElseThrow(() -> new NotFoundException("Событие с таким id не найдено"));
+        return event;
+    }
+
+    @Override
+    public List<EventDto> getPublished(List<Long> eventIds) {
         return addInfo(eventRepository.findByIdInAndState(eventIds, EventState.PUBLISHED.toString()));
     }
 
@@ -104,7 +129,15 @@ public class EventServiceImpl implements EventService {
         event.setInitiatorId(userId);
         event.setCategoryId(newEventDto.getCategory());
         event.setLocationId(locationService.create(newEventDto.getLocation()).getId());
-        return addInfo(eventRepository.save(event));
+        event.setState(EventState.PENDING.toString());
+        event.setCreatedOn(LocalDateTime.now());
+        if (event.getParticipantLimit().equals(0L)) {
+            setEventPublished(event);
+        }
+
+        EventDto res = addInfo(eventRepository.save(event));
+        eventRepository.flush();
+        return res;
     }
 
     @Override
@@ -124,19 +157,25 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    public void increaseViews(Long id) {
-        if (!existsById(id)) {
-            throw new NotFoundException("Собатиые не найдено");
+    public void increaseViews(Long eventId, String ip) {
+        if (!existsById(eventId)) {
+            throw new NotFoundException("Событие не найдено");
         }
-        eventRepository.increaseViews(id);
+        viewService.add(eventId, ip);
+        ViewStatDto views = viewService.stat(eventId);
+        eventRepository.setViews(eventId, views.getViews());
+        eventRepository.flush();
     }
 
     @Override
     public Page<EventShortDto> getByFilter(EventFilter filter) {
+
+        checkFilterDateRangeIsGood(filter.getRangeStart(), filter.getRangeEnd());
+
         EventSpecs e = new EventSpecs();
         Specification<Event> spec = Specification.where(null);
 
-        if (filter.getCategories() != null) {
+        if (filter.getText() != null && !filter.getText().isBlank()) {
             spec = spec.and(e.hasTitle(filter.getText()));
         }
 
@@ -151,6 +190,7 @@ public class EventServiceImpl implements EventService {
         if (filter.getRangeStart() != null) {
             spec = spec.and(e.hasRangeStart(filter.getRangeStart()));
         }
+
         if (filter.getRangeEnd() != null) {
             spec = spec.and(e.hasRangeEnd(filter.getRangeEnd()));
         }
@@ -206,16 +246,16 @@ public class EventServiceImpl implements EventService {
         checkDateIsGoodThrowError(updated.getEventDate());
 
         Event event;
-        if (!isAdminEditThis) {
-            event = eventRepository.findByIdAndInitiatorId(eventId, userId)
-                .orElseThrow(() -> new NotFoundException("Собатиые не найдено"));
-        } else {
+        if (isAdminEditThis) {
             event = eventRepository.findById(eventId)
                     .orElseThrow(() -> new NotFoundException("Собатиые не найдено"));
-        }
+        } else {
+            event = eventRepository.findByIdAndInitiatorId(eventId, userId)
+                    .orElseThrow(() -> new NotFoundException("Собатиые не найдено"));
 
-        if (event.getState().equals(EventState.PUBLISHED.toString())) {
-            throw new AccessDeniedException("Невозможно имзенить опубликованное событие");
+            if (event.getState().equals(EventState.PUBLISHED.toString())) {
+                throw new BadConditionsException("Нельзя изменить уже опубликованное событие");
+            }
         }
 
         checkDateIsGoodThrowError(event.getEventDate());
@@ -231,28 +271,62 @@ public class EventServiceImpl implements EventService {
             updateEventLocationOrCreateNew(event, updated.getLocation());
         }
 
+        if (updated.getAnnotation() != null) {
+            event.setAnnotation(updated.getAnnotation());
+        }
+
+        if (updated.getPaid() != null) {
+            event.setPaid(updated.getPaid());
+        }
+
+        if (updated.getEventDate() != null) {
+            event.setEventDate(updated.getEventDate());
+        }
+
+        if (updated.getDescription() != null) {
+            event.setDescription(updated.getDescription());
+        }
+
+        if (updated.getTitle() != null) {
+            event.setTitle(updated.getTitle());
+        }
+
+        if (updated.getParticipantLimit() != null) {
+            event.setParticipantLimit(updated.getParticipantLimit());
+        }
+
         if (action != null) {
             if (isAdminEditThis) {
                 if (action.equals(StateAction.PUBLISH_EVENT.toString())
-                        && event.getState().equals(EventState.PUBLISHED.toString())) {
-                    throw new ConstraintViolationException("Нельзя опубликовать уже опубликованное событие");
+                        && event.getState().equals(EventState.PUBLISHED.toString())
+                        && !event.getParticipantLimit().equals(0L)) {
+                    throw new BadConditionsException("Нельзя опубликовать уже опубликованное событие");
                 }
-            }
+                if (action.equals(StateAction.PUBLISH_EVENT.toString())
+                        && event.getState().equals(EventState.CANCELED.toString())) {
+                    throw new BadConditionsException("Нельзя опубликовать уже отменённое событие");
+                }
 
-            if (isAdminEditThis) {
                 if (action.equals(StateAction.PUBLISH_EVENT.toString())) {
-                    event.setState(EventState.PUBLISHED.toString());
+                    setEventPublished(event);
                 } else if (action.equals(StateAction.REJECT_EVENT.toString())) {
+                    if (event.getState().equals(EventState.PUBLISHED.toString())) {
+                        throw new BadConditionsException("Нельзя отменить уже опубликованное событие");
+                    }
                     event.setState(EventState.CANCELED.toString());
                 }
             } else {
                 if (action.equals(StateActionUser.SEND_TO_REVIEW.toString())) {
                     event.setState(EventState.PENDING.toString());
+                } else if (action.equals(StateActionUser.CANCEL_REVIEW.toString())) {
+                    event.setState(EventState.CANCELED.toString());
                 }
             }
         }
 
-        return addInfo(eventRepository.save(event));
+        Event res = eventRepository.save(event);
+        eventRepository.flush();
+        return addInfo(res);
     }
 
     @Override
@@ -260,18 +334,27 @@ public class EventServiceImpl implements EventService {
     public EventRequestStatusUpdateResult updateRequestsStatus(Long eventId, Long userId,
             EventRequestStatusUpdateRequest updateRequest) {
 
-        UserDto user = userService.get(userId);
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException("Событие с таким id не найдено"));
+        final String REJECTED = RequestStatus.REJECTED.toString();
+        final String CONFIRMED = RequestStatus.CONFIRMED.toString();
+        String setStatus = RequestStatus.valueOf(updateRequest.getStatus()).toString();
 
-        if (!event.getInitiatorId().equals(user.getId()))
+        UserDto user = userService.get(userId);
+        EventDto event = get(eventId);
+
+        if (setStatus.equals(CONFIRMED) && event.getConfirmedRequests() >= event.getParticipantLimit()) {
+            throw new BadConditionsException(
+                    "Нельзя принять ещё одного участника, достигнут лимит");
+        }
+
+        if (!event.getInitiatorId().equals(user.getId())) {
             throw new AccessDeniedException(
                     "Пользователь может изменять статус только событиям, которые он сделал сам");
+        }
 
         // если для события лимит заявок равен 0 или отключена пре-модерация заявок, то
         // подтверждение заявок не требуется
         EventRequestStatusUpdateResult result = new EventRequestStatusUpdateResult();
-        if (!event.getRequestModeration() || event.getParticipantLimit() == 0) {
+        if (!event.getRequestModeration() || event.getParticipantLimit().equals(0L)) {
             return result;
         }
 
@@ -279,51 +362,63 @@ public class EventServiceImpl implements EventService {
         List<ParticipationRequestDto> requests = requestService
                 .findByEventIdAndIdIn(eventId, requestsIds);
 
-        if (requests.stream().anyMatch(x -> x.getStatus().equals(RequestStatus.REJECTED.toString()))) {
-            throw new ConditionsNotMetException(
+        if (requests.stream().anyMatch(x -> x.getStatus().equals(REJECTED))) {
+            throw new BadConditionsException(
                     "Статус можно изменить только у заявок, находящихся в состоянии ожидания");
+        }
+
+        if (requests.size() > 0 && setStatus.equals(REJECTED)) {
+            requestService.setStatusAll(requestsIds, REJECTED);
+            requests.forEach(x -> x.setStatus(REJECTED));
+            result.setRejectedRequests(requests);
+            return result;
         }
 
         List<ParticipationRequestDto> requestsConfirmed = requests.stream()
                 .filter(x -> x.getStatus().equals(RequestStatus.CONFIRMED.toString()))
-                .toList();
+                .collect(Collectors.toList());
 
-        List<ParticipationRequestDto> requestsUnconfirmed = requests.stream()
+        List<ParticipationRequestDto> requestsPending = requests.stream()
                 .filter(x -> x.getStatus().equals(RequestStatus.PENDING.toString()))
                 .toList();
 
         int availableSlots = (int) (event.getParticipantLimit() - requestsConfirmed.size());
         if (availableSlots < 1L) {
-            throw new ConditionsNotMetException(
+            throw new BadConditionsException(
                     "Нельзя подтвердить заявку, если уже достигнут лимит по заявкам на данное событие");
         }
-        if (availableSlots > requestsUnconfirmed.size()) {
-            availableSlots = requestsUnconfirmed.size();
+        if (availableSlots > requestsPending.size()) {
+            availableSlots = requestsPending.size();
         }
 
-        List<ParticipationRequestDto> toConfirm = requestsUnconfirmed.subList(
+        List<ParticipationRequestDto> toConfirm = requestsPending.subList(
                 0, availableSlots);
 
-        List<Long> toConfirmIds = toConfirm.stream()
-                .map(ParticipationRequestDto::getId).toList();
-
-        requestService.setStatusAll(toConfirmIds, RequestStatus.CONFIRMED.toString());
-
-        List<ParticipationRequestDto> toReject = List.of();
-        if (availableSlots < requestsUnconfirmed.size()) {
-            toReject = requestsUnconfirmed.subList(
-                    availableSlots, requestsUnconfirmed.size());
-
-            List<Long> toRejectIds = toConfirm.stream()
+        if (toConfirm.size() > 0) {
+            List<Long> toConfirmIds = toConfirm.stream()
                     .map(ParticipationRequestDto::getId).toList();
 
-            requestService.setStatusAll(toRejectIds, RequestStatus.REJECTED.toString());
+            toConfirm.forEach(x -> x.setStatus(RequestStatus.CONFIRMED.toString()));
+            requestService.setStatusAll(toConfirmIds, RequestStatus.CONFIRMED.toString());
+
+            List<ParticipationRequestDto> toReject = List.of();
+            if (availableSlots < requestsPending.size()) {
+                toReject = requestsPending.subList(
+                        availableSlots, requestsPending.size());
+
+                List<Long> toRejectIds = toConfirm.stream()
+                        .map(ParticipationRequestDto::getId).toList();
+
+                requestService.setStatusAll(toRejectIds, REJECTED);
+            }
+
+            requestsConfirmed.addAll(toConfirm);
+            setConfirmedRequestsCount(event.getInitiatorId(), (long) requestsConfirmed.size());
+            result.setConfirmedRequests(requestsConfirmed);
+            result.setRejectedRequests(toReject);
         }
 
-        requestsConfirmed.addAll(toConfirm);
-        setConfirmedRequestsCount(event.getInitiatorId(), (long) requestsConfirmed.size());
-        result.setConfirmedRequests(requestsConfirmed);
-        result.setRejectedRequests(toReject);
+        eventRepository.flush();
         return result;
     }
 
@@ -341,8 +436,10 @@ public class EventServiceImpl implements EventService {
         return requestService.getByEventId(eventId);
     }
 
-    private void setConfirmedRequestsCount(Long eventId, Long requestsCount) {
+    @Transactional
+    public void setConfirmedRequestsCount(Long eventId, Long requestsCount) {
         eventRepository.setContirmedRequestsCount(eventId, requestsCount);
+        eventRepository.flush();
     }
 
     private List<EventDto> addInfo(List<Event> events) {
@@ -377,7 +474,12 @@ public class EventServiceImpl implements EventService {
                 .toList();
     }
 
-    private void updateEventLocationOrCreateNew(Event event, LocationUpdateDto location) {
+    public EventDto addInfo(Event event) {
+        return addInfo(List.of(event)).get(0);
+    }
+
+    @Transactional
+    public void updateEventLocationOrCreateNew(Event event, LocationUpdateDto location) {
         Float lon = location.getLon();
         Float lat = location.getLat();
 
@@ -390,10 +492,6 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    private EventDto addInfo(Event event) {
-        return addInfo(List.of(event)).get(0);
-    }
-
     private void checkDateIsGoodThrowError(LocalDateTime date) {
         if (date == null) {
             return;
@@ -404,5 +502,24 @@ public class EventServiceImpl implements EventService {
                     "Событие можно запланировать или изменить минимум за " + MINIMAL_MINUTES_FOR_CHANGES
                             + " минут до его начала");
         }
+    }
+
+    private void checkFilterDateRangeIsGood(LocalDateTime dateBegin, LocalDateTime dateEnd) {
+        if (dateBegin == null) {
+            return;
+        }
+        if (dateEnd == null) {
+            return;
+        }
+
+        if (dateBegin.isAfter(dateEnd)) {
+            throw new ConstraintViolationException(
+                    "Неверно задана дата начала и конца события в фильтре");
+        }
+    }
+
+    private void setEventPublished(Event event) {
+        event.setState(EventState.PUBLISHED.toString());
+        event.setPublishedOn(LocalDateTime.now());
     }
 }

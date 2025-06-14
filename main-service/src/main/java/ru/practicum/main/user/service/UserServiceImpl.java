@@ -2,6 +2,8 @@ package ru.practicum.main.user.service;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +32,15 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<UserDto> get(List<Long> ids) {
-        return userRepository.getByIdIn(ids).stream().map(UserMapper::toDto).toList();
+        return userRepository.findByIdIn(ids).stream().map(UserMapper::toDto).toList();
+    }
+
+    @Override
+    public Page<UserDto> get(List<Long> ids, Pageable pageable) {
+        if (ids == null || ids.isEmpty()) {
+            return UserMapper.toDto(userRepository.findAll(pageable));
+        }
+        return UserMapper.toDto(userRepository.findByIdIn(ids, pageable));
     }
 
     @Override
@@ -46,13 +56,16 @@ public class UserServiceImpl implements UserService {
             user.setName("Unnamed");
         }
 
-        return UserMapper.toDto(userRepository.save(user));
+        User userSaved = userRepository.save(user);
+        userRepository.flush();
+        return UserMapper.toDto(userSaved);
     }
 
     @Override
     @Transactional
     public void delete(Long id) {
         userRepository.deleteById(id);
+        userRepository.flush();
     }
 
     @Override
@@ -89,6 +102,8 @@ public class UserServiceImpl implements UserService {
             userSaved.setName(user.getName());
         }
 
-        return UserMapper.toDto(userRepository.save(userSaved));
+        User userLoad = userRepository.save(userSaved);
+        userRepository.flush();
+        return UserMapper.toDto(userLoad);
     }
 }

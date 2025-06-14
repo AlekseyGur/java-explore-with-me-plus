@@ -1,6 +1,8 @@
 package ru.practicum.main.category.service;
 
 import ru.practicum.main.category.dto.CategoryDto;
+import ru.practicum.main.category.dto.CategoryNewDto;
+import ru.practicum.main.category.dto.CategoryUpdateDto;
 
 import java.util.List;
 
@@ -12,9 +14,9 @@ public interface CategoryService {
 
     List<CategoryDto> findAll(Integer from, Integer size);
 
-    CategoryDto create(CategoryDto dto);
+    CategoryDto create(CategoryNewDto dto);
 
-    CategoryDto update(Long id, CategoryDto dto);
+    CategoryDto update(Long id, CategoryUpdateDto dto);
 
     void delete(Long id);
 

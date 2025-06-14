@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.main.category.dto.CategoryDto;
+import ru.practicum.main.category.dto.CategoryNewDto;
+import ru.practicum.main.category.dto.CategoryUpdateDto;
 import ru.practicum.main.category.service.CategoryService;
 
 import java.util.List;
@@ -31,12 +33,12 @@ public class CategoryController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CategoryDto createCategory(@RequestBody @Valid CategoryDto dto) {
+    public CategoryDto createCategory(@RequestBody @Valid CategoryNewDto dto) {
         return categoryService.create(dto);
     }
 
     @PatchMapping("/{id}")
-    public CategoryDto updateCategory(@PathVariable Long id, @RequestBody @Valid CategoryDto dto) {
+    public CategoryDto updateCategory(@PathVariable Long id, @RequestBody @Valid CategoryUpdateDto dto) {
         return categoryService.update(id, dto);
     }
 

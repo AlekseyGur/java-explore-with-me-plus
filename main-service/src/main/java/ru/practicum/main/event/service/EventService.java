@@ -11,11 +11,17 @@ import org.springframework.data.domain.Pageable;
 public interface EventService {
     EventDto get(Long eventId);
 
+    EventDto getPublic(Long eventId);
+
     List<EventDto> get(List<Long> eventIds);
+
+    EventDto getPublished(Long eventId);
+
+    List<EventDto> getPublished(List<Long> eventIds);
 
     Page<EventShortDto> getByFilter(EventFilter filter);
 
-    void increaseViews(Long id);
+    void increaseViews(Long eventId, String ip);
 
     boolean existsById(Long id);
 

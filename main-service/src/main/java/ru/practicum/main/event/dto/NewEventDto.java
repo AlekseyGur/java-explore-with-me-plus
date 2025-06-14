@@ -19,16 +19,23 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class NewEventDto {
 
+    @NotNull
+    @NotBlank
+    @Size(min = 3, max = 120)
+    private String title;
+
+    @NotNull
     @NotBlank
     @Size(min = 20, max = 2000)
     private String annotation;
 
     @NotNull
-    private Long category;
-
     @NotBlank
     @Size(min = 20, max = 7000)
     private String description;
+
+    @NotNull
+    private Long category;
 
     @NotNull
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
@@ -47,8 +54,4 @@ public class NewEventDto {
     @NotNull
     private Boolean requestModeration = true;
 
-    @NotNull
-    @NotBlank
-    @Size(min = 3, max = 120)
-    private String title;
 }

@@ -1,19 +1,22 @@
 package ru.practicum.main.event.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
 import ru.practicum.main.event.dto.*;
 import ru.practicum.main.event.service.EventService;
 import ru.practicum.main.request.dto.ParticipationRequestDto;
 
 import java.util.Collection;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -24,18 +27,18 @@ public class EventPrivateController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public EventDto create(@PathVariable Long userId,
-            @Valid @RequestBody NewEventDto newEventDto) {
+    public EventDto create(@PathVariable @Positive Long userId,
+                    @Valid @RequestBody NewEventDto newEventDto) {
         return eventService.create(userId, newEventDto);
     }
 
     @GetMapping
-    public Page<EventShortDto> getEventsByUser(@PathVariable Long userId,
-                    @RequestParam(defaultValue = "0") Integer from,
+    public List<EventShortDto> getEventsByUser(@PathVariable Long userId,
+                            @RequestParam(defaultValue = "0") Integer from,
             @RequestParam(defaultValue = "10") Integer size) {
 
         Pageable pageable = PageRequest.of(from, size);
-        return eventService.getByUserId(userId, pageable);
+        return eventService.getByUserId(userId, pageable).getContent();
     }
 
     @GetMapping("/{eventId}")
@@ -55,11 +58,11 @@ public class EventPrivateController {
 
     @PatchMapping("/{eventId}/requests")
     public EventRequestStatusUpdateResult updateRequests(
-                    @PathVariable Long userId,
-            @PathVariable Long eventId,
-            @RequestBody EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest) {
-        return eventService.updateRequestsStatus(eventId, userId,
-                        eventRequestStatusUpdateRequest);
+            @PathVariable Long userId,
+                    @PathVariable Long eventId,
+            @RequestBody EventRequestStatusUpdateRequest req,
+            HttpServletRequest request) {
+        return eventService.updateRequestsStatus(eventId, userId, req);
     }
 
     @GetMapping("/{eventId}/requests")

@@ -5,11 +5,18 @@ import java.util.List;
 
 import org.springframework.data.jpa.domain.Specification;
 
+import jakarta.persistence.criteria.Predicate;
 import ru.practicum.main.event.model.Event;
 
 class EventSpecs {
     public Specification<Event> hasTitle(String text) {
-        return (root, query, cb) -> cb.like(root.get("title"), "%" + text + "%");
+        return (root, query, cb) -> {
+            Predicate titlePredicate = cb.like(root.get("title"), "%" + text + "%");
+
+            Predicate annotationPredicate = cb.like(root.get("annotation"), "%" + text + "%");
+
+            return cb.or(titlePredicate, annotationPredicate);
+        };
     }
 
     public Specification<Event> hasCategories(List<Long> categories) {

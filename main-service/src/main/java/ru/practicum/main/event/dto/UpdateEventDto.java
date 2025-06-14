@@ -16,13 +16,16 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 public class UpdateEventDto {
+    @Size(min = 3, max = 120)
+    private String title;
+
     @Size(min = 20, max = 2000)
     private String annotation;
 
-    private Long category;
-
     @Size(min = 20, max = 7000)
     private String description;
+
+    private Long category;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime eventDate;
@@ -39,6 +42,7 @@ public class UpdateEventDto {
     @Pattern(regexp = "PUBLISH_EVENT|REJECT_EVENT|SEND_TO_REVIEW|CANCEL_REVIEW")
     private String stateAction;
 
-    @Size(min = 3, max = 120)
-    private String title;
+    @Pattern(regexp = "PUBLISH_EVENT|REJECT_EVENT|SEND_TO_REVIEW|CANCEL_REVIEW")
+    private String StateActionUser;
+
 }

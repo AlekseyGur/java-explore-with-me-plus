@@ -4,9 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Future;
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
@@ -23,7 +21,6 @@ import ru.practicum.main.event.service.EventService;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Slf4j
 @RestController
 @RequestMapping("/admin/events")
 @AllArgsConstructor
@@ -34,7 +31,7 @@ public class EventAdminController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public Page<EventShortDto> find(
+    public List<EventShortDto> find(
             @RequestParam(required = false) String text,
             @RequestParam(required = false) List<Long> users,
             @RequestParam(required = false) List<String> states,
@@ -70,7 +67,7 @@ public class EventAdminController {
                 .size(size)
                 .isDtoForAdminApi(true)
                 .build();
-        return eventService.getByFilter(param);
+        return eventService.getByFilter(param).getContent();
     }
 
     @PatchMapping("/{eventId}")

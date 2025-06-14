@@ -14,6 +14,7 @@ import ru.practicum.main.user.controller.UserController;
 import ru.practicum.main.user.dto.UserDto;
 import ru.practicum.main.user.dto.UserNewDto;
 import ru.practicum.main.user.dto.UserUpdateDto;
+import ru.practicum.main.user.mapper.UserMapper;
 import ru.practicum.main.user.service.UserService;
 
 @SpringBootTest(classes = { MainApplication.class })
@@ -118,6 +119,6 @@ public class UserServiceTest {
     }
 
     private UserDto userControllerGet(Long userId) {
-        return userController.get(List.of(userId)).get(0);
+        return userController.get(List.of(userId), null, null).get(0);
     }
 }

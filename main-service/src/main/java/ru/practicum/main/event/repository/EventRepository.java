@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.lang.NonNull;
 
 import ru.practicum.main.event.model.Event;
 
@@ -14,6 +15,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface EventRepository extends JpaRepository<Event, Long> {
+    List<Event> findByIdIn(List<Long> userIds);
+
     List<Event> findByIdInAndState(List<Long> userIds, String state);
 
     Optional<Event> findByIdAndState(Long id, String state);
@@ -28,9 +31,11 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     boolean existsByCategoryId(Long categoryId);
 
+    boolean existsById(@NonNull Long eventId);
+
     @Modifying
-    @Query("UPDATE Event e SET e.views = e.views + 1 WHERE e.id = :eventId")
-    void increaseViews(@Param("eventId") Long eventId);
+    @Query("UPDATE Event e SET e.views = :views WHERE e.id = :eventId")
+    void setViews(@Param("eventId") Long eventId, @Param("views") Long views);
 
     @Modifying
     @Query("UPDATE Event e SET e.confirmedRequests = :count WHERE e.id = :eventId")
