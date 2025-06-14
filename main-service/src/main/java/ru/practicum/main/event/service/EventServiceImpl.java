@@ -48,6 +48,7 @@ import ru.practicum.main.user.service.UserService;
 import ru.practicum.main.views.dto.ViewStatDto;
 import ru.practicum.main.views.service.ViewService;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
@@ -176,7 +177,11 @@ public class EventServiceImpl implements EventService {
 
         List<Event> events = new ArrayList<>();
         QEvent event = QEvent.event;
-        BooleanExpression exp = event.state.eq(EventState.PUBLISHED.toString());
+        BooleanExpression exp = Expressions.asBoolean(true).isTrue();
+
+        if (!filter.getIsDtoForAdminApi()) {
+            exp = event.state.eq(EventState.PUBLISHED.toString());
+        }
 
         if (filter.getText() != null && !filter.getText().isBlank()) {
             exp = exp.and(event.description.containsIgnoreCase(filter.getText()))
