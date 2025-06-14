@@ -1,6 +1,10 @@
 package ru.practicum.main.user.mapper;
 
 import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 
 import lombok.experimental.UtilityClass;
 import ru.practicum.main.user.dto.UserDto;
@@ -47,5 +51,12 @@ public class UserMapper {
 
     public static List<UserDto> toDto(List<User> users) {
         return users.stream().map(UserMapper::toDto).toList();
+    }
+
+    public static Page<UserDto> toDto(Page<User> users) {
+        List<UserDto> userDtos = users.stream()
+                .map(UserMapper::toDto).toList();
+
+        return new PageImpl<>(userDtos, users.getPageable(), users.getTotalElements());
     }
 }

@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 public interface EventService {
     EventDto get(Long eventId);
 
+    EventDto getPublic(Long eventId);
+
     List<EventDto> get(List<Long> eventIds);
 
     EventDto getPublished(Long eventId);

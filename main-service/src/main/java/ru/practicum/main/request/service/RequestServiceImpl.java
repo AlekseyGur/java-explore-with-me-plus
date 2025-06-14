@@ -83,7 +83,7 @@ public class RequestServiceImpl implements RequestService {
             request.setStatus(RequestStatus.CONFIRMED.toString());
         }
 
-        if (event.getParticipantLimit() == 0) {
+        if (event.getParticipantLimit().equals(0L)) {
             request.setStatus(RequestStatus.CONFIRMED.toString());
         }
 

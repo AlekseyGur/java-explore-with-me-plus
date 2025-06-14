@@ -63,6 +63,15 @@ public class EventServiceImpl implements EventService {
     private final static int MINIMAL_MINUTES_FOR_CHANGES = 1;
 
     @Override
+    public EventDto getPublic(Long eventId) {
+        EventDto event = eventRepository.findById(eventId)
+                .filter(x -> x.getState().equals(EventState.PUBLISHED.toString()))
+                .map(this::addInfo)
+                .orElseThrow(() -> new NotFoundException("Событие с таким id не найдено"));
+        return event;
+    }
+
+    @Override
     public EventDto get(Long eventId) {
         EventDto event = eventRepository.findById(eventId)
                 .map(this::addInfo)
@@ -122,7 +131,7 @@ public class EventServiceImpl implements EventService {
         event.setLocationId(locationService.create(newEventDto.getLocation()).getId());
         event.setState(EventState.PENDING.toString());
         event.setCreatedOn(LocalDateTime.now());
-        if (event.getParticipantLimit() == 0) {
+        if (event.getParticipantLimit().equals(0L)) {
             event.setState(EventState.PUBLISHED.toString());
         }
 
@@ -160,6 +169,10 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public Page<EventShortDto> getByFilter(EventFilter filter) {
+        System.out.println(filter);
+
+        checkFilterDateRangeIsGood(filter.getRangeStart(), filter.getRangeEnd());
+
         EventSpecs e = new EventSpecs();
         Specification<Event> spec = Specification.where(null);
 
@@ -263,7 +276,8 @@ public class EventServiceImpl implements EventService {
         if (action != null) {
             if (isAdminEditThis) {
                 if (action.equals(StateAction.PUBLISH_EVENT.toString())
-                        && event.getState().equals(EventState.PUBLISHED.toString())) {
+                        && event.getState().equals(EventState.PUBLISHED.toString())
+                        && !event.getParticipantLimit().equals(0L)) {
                     throw new BadConditionsException("Нельзя опубликовать уже опубликованное событие");
                 }
                 if (action.equals(StateAction.PUBLISH_EVENT.toString())
@@ -318,7 +332,7 @@ public class EventServiceImpl implements EventService {
         // если для события лимит заявок равен 0 или отключена пре-модерация заявок, то
         // подтверждение заявок не требуется
         EventRequestStatusUpdateResult result = new EventRequestStatusUpdateResult();
-        if (!event.getRequestModeration() || event.getParticipantLimit() == 0) {
+        if (!event.getRequestModeration() || event.getParticipantLimit().equals(0L)) {
             return result;
         }
 
@@ -468,6 +482,20 @@ public class EventServiceImpl implements EventService {
             throw new ConstraintViolationException(
                     "Событие можно запланировать или изменить минимум за " + MINIMAL_MINUTES_FOR_CHANGES
                             + " минут до его начала");
+        }
+    }
+
+    private void checkFilterDateRangeIsGood(LocalDateTime dateBegin, LocalDateTime dateEnd) {
+        if (dateBegin == null) {
+            return;
+        }
+        if (dateEnd == null) {
+            return;
+        }
+
+        if (dateBegin.isAfter(dateEnd)) {
+            throw new ConstraintViolationException(
+                    "Неверно задана дата начала и конца события в фильтре");
         }
     }
 }

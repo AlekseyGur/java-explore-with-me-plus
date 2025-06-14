@@ -36,13 +36,14 @@ public class EventPublicController {
                         @RequestParam(required = false) List<Long> categories,
                         @RequestParam(required = false) Boolean paid,
                         @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeStart,
-                        @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") @Future LocalDateTime rangeEnd,
-                        @RequestParam(defaultValue = "false") Boolean onlyAvailable,
+                        @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeEnd,
+                                        @RequestParam(defaultValue = "false") Boolean onlyAvailable,
                         @RequestParam(required = false) String sort,
                         @RequestParam(defaultValue = "0") Integer from,
                         @RequestParam(defaultValue = "10") Integer size,
                                         HttpServletRequest request) {
 
+                System.out.println("getByFilter ======================");
                 HitDto hitDto = HitDto.builder()
                                 .app("ewm-main-service")
                                 .ip(request.getRemoteAddr())
@@ -62,6 +63,7 @@ public class EventPublicController {
                                 .from(from)
                                 .size(size)
                                 .build();
+                                
                 return eventService.getByFilter(param);
         }
 
@@ -78,6 +80,6 @@ public class EventPublicController {
                 statsClient.hit(hitDto);
 
                 eventService.increaseViews(eventId, request.getRemoteAddr());
-                return eventService.get(eventId);
+                return eventService.getPublic(eventId);
         }
 }

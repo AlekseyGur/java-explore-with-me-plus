@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.lang.NonNull;
 
 import ru.practicum.main.event.model.Event;
 
@@ -30,7 +31,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     boolean existsByCategoryId(Long categoryId);
 
-    boolean existsById(Long eventId);
+    boolean existsById(@NonNull Long eventId);
 
     @Modifying
     @Query("UPDATE Event e SET e.views = :views WHERE e.id = :eventId")

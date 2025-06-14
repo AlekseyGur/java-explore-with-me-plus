@@ -33,7 +33,7 @@ public class EventAdminController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public Page<EventShortDto> find(
+    public List<EventShortDto> find(
             @RequestParam(required = false) String text,
             @RequestParam(required = false) List<Long> users,
             @RequestParam(required = false) List<String> states,
@@ -69,7 +69,7 @@ public class EventAdminController {
                 .size(size)
                 .isDtoForAdminApi(true)
                 .build();
-        return eventService.getByFilter(param);
+        return eventService.getByFilter(param).getContent();
     }
 
     @PatchMapping("/{eventId}")
