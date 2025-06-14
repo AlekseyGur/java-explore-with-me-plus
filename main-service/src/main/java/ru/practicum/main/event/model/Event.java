@@ -2,6 +2,7 @@ package ru.practicum.main.event.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.boot.autoconfigure.security.SecurityProperties;
 
 import java.time.LocalDateTime;
 
@@ -14,8 +15,8 @@ public class Event {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @jakarta.persistence.Column(name = "id")
-    Long id;
+    @Column(name = "id")
+    private Long id;
 
     @Column(name = "title")
     String title;
@@ -35,8 +36,9 @@ public class Event {
     @Column(name = "category_id")
     Long categoryId;
 
-    @Column(name = "initiator_id")
-    Long initiatorId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "initiator_id", insertable = false, updatable = false)
+    private SecurityProperties.User initiator;
 
     @Column(name = "paid")
     Boolean paid;
