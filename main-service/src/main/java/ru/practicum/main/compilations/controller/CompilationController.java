@@ -18,14 +18,14 @@ import java.util.List;
 public class CompilationController {
     private final CompilationService compilationService;
 
-    @GetMapping(path="/compilations")
+    @GetMapping(path = "/compilations")
     public List<CompilationDto> getList(@RequestParam(required = false) Boolean pinned,
                                     @RequestParam(defaultValue = "0") int from,
             @RequestParam(defaultValue = "10") int size) {
         return compilationService.getCompilationList(pinned, from, size);
     }
 
-    @GetMapping(path="/compilations/{compId}")
+    @GetMapping(path = "/compilations/{compId}")
     public CompilationDto getById(@PathVariable long compId) {
         return compilationService.getById(compId);
     }

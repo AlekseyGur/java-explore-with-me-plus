@@ -43,6 +43,6 @@ public class UpdateEventDto {
     private String stateAction;
 
     @Pattern(regexp = "PUBLISH_EVENT|REJECT_EVENT|SEND_TO_REVIEW|CANCEL_REVIEW")
-    private String StateActionUser;
+    private String stateActionUser;
 
 }

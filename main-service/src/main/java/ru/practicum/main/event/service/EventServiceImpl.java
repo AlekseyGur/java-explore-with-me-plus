@@ -60,7 +60,7 @@ public class EventServiceImpl implements EventService {
     private final CategoryService categoryService;
     private final LocationService locationService;
     private final ViewService viewService;
-    private final static int MINIMAL_MINUTES_FOR_CHANGES = 1;
+    private static final int MINIMAL_MINUTES_FOR_CHANGES = 1;
 
     @Override
     public EventDto getPublic(Long eventId) {
