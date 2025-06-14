@@ -18,7 +18,7 @@ public class Compilation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToMany
+    @ManyToMany
     @JoinTable(
             name = "compilations_events",
             joinColumns = @JoinColumn(name = "compilation_id"),
@@ -31,6 +31,4 @@ public class Compilation {
 
     @Column(name = "pinned")
     private Boolean pinned;
-
-
 }
