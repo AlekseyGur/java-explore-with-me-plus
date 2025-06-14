@@ -51,7 +51,7 @@ import ru.practicum.main.views.service.ViewService;
 
 @Service
 @AllArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class EventServiceImpl implements EventService {
 
     private final EventRepository eventRepository;
@@ -442,7 +442,7 @@ public class EventServiceImpl implements EventService {
         eventRepository.flush();
     }
 
-    public List<EventDto> addInfo(List<Event> events) {
+    private List<EventDto> addInfo(List<Event> events) {
         List<Long> eventsIds = events.stream().map(Event::getId).toList();
         List<Long> categoryIds = events.stream().map(Event::getCategoryId).toList();
         List<Long> usersIds = events.stream().map(Event::getInitiatorId).toList();
@@ -478,7 +478,8 @@ public class EventServiceImpl implements EventService {
         return addInfo(List.of(event)).get(0);
     }
 
-    private void updateEventLocationOrCreateNew(Event event, LocationUpdateDto location) {
+    @Transactional
+    public void updateEventLocationOrCreateNew(Event event, LocationUpdateDto location) {
         Float lon = location.getLon();
         Float lat = location.getLat();
 

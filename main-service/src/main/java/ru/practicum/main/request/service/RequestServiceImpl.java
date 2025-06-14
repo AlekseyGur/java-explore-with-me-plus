@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class RequestServiceImpl implements RequestService {
     private final RequestRepository requestRepository;
     private final UserService userService;
