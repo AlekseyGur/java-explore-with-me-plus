@@ -67,7 +67,7 @@ public class DtoValidator {
     }
 
     public void updValidationDtoForUser(Long userId, UpdateEventDto updateEventDto, Event stored) {
-        if (!stored.getInitiatorId().equals(userId)) {
+        if (!stored.getInitiator().equals(userId)) {
             throw new IncorrectlyDateStateRequestException(
                     "Условия выполнения не соблюдены",
                     "Изменять может только владелец",
