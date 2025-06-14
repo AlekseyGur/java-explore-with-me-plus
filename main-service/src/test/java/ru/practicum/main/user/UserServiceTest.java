@@ -118,6 +118,6 @@ public class UserServiceTest {
     }
 
     private UserDto userControllerGet(Long userId) {
-        return userController.get(List.of(userId), null, null).get(0);
+        return userController.get(List.of(userId), 0, 10).get(0);
     }
 }
