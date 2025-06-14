@@ -10,6 +10,7 @@ import lombok.experimental.UtilityClass;
 import ru.practicum.main.user.dto.UserDto;
 import ru.practicum.main.user.model.User;
 import ru.practicum.main.user.dto.UserNewDto;
+import ru.practicum.main.user.dto.UserShortDto;
 import ru.practicum.main.user.dto.UserUpdateDto;
 
 @UtilityClass
@@ -27,6 +28,13 @@ public class UserMapper {
         user.setId(userDto.getId());
         user.setName(userDto.getName());
         user.setEmail(userDto.getEmail());
+        return user;
+    }
+
+    public static UserShortDto toShortfromDto(UserDto userDto) {
+        UserShortDto user = new UserShortDto();
+        user.setId(userDto.getId());
+        user.setName(userDto.getName());
         return user;
     }
 

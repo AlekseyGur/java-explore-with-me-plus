@@ -14,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@ToString
 public class EventDto {
     private Long id;
 
@@ -27,7 +28,7 @@ public class EventDto {
 
     private LocalDateTime createdOn;
 
-    private String publishedOn;
+    private LocalDateTime publishedOn;
 
     private String description;
 

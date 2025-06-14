@@ -31,7 +31,7 @@ public class EventPublicController {
 
         @GetMapping
         @ResponseStatus(HttpStatus.OK)
-        public Page<EventShortDto> find(
+        public List<EventShortDto> find(
                                         @RequestParam(required = false) String text,
                         @RequestParam(required = false) List<Long> categories,
                         @RequestParam(required = false) Boolean paid,
@@ -43,7 +43,6 @@ public class EventPublicController {
                         @RequestParam(defaultValue = "10") Integer size,
                                         HttpServletRequest request) {
 
-                System.out.println("getByFilter ======================");
                 HitDto hitDto = HitDto.builder()
                                 .app("ewm-main-service")
                                 .ip(request.getRemoteAddr())
@@ -63,8 +62,8 @@ public class EventPublicController {
                                 .from(from)
                                 .size(size)
                                 .build();
-                                
-                return eventService.getByFilter(param);
+
+                return eventService.getByFilter(param).getContent();
         }
 
         @GetMapping(path = "/{eventId}")

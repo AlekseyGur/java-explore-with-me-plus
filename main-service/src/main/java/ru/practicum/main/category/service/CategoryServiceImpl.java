@@ -6,6 +6,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.main.category.dto.CategoryDto;
+import ru.practicum.main.category.dto.CategoryNewDto;
+import ru.practicum.main.category.dto.CategoryUpdateDto;
 import ru.practicum.main.category.model.Category;
 import ru.practicum.main.category.mapper.CategoryMapper;
 import ru.practicum.main.category.repository.CategoryRepository;
@@ -15,6 +17,7 @@ import ru.practicum.main.system.exception.DuplicatedDataException;
 import ru.practicum.main.system.exception.NotFoundException;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @AllArgsConstructor
@@ -45,7 +48,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
-    public CategoryDto create(CategoryDto dto) {
+    public CategoryDto create(CategoryNewDto dto) {
         Category category = CategoryMapper.fromDto(dto);
 
         checkExistsByNameThrowError(dto.getName());
@@ -55,9 +58,15 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
-    public CategoryDto update(Long id, CategoryDto dto) {
+    public CategoryDto update(Long id, CategoryUpdateDto dto) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Категория с таким id не найдена"));
+
+        Optional<Category> categorySameName = categoryRepository.findByIdAndName(id, dto.getName());
+
+        if (categorySameName.isPresent()) {
+            return CategoryMapper.toDto(categorySameName.get());
+        }
 
         checkExistsByNameThrowError(dto.getName());
 

@@ -132,7 +132,7 @@ public class EventServiceImpl implements EventService {
         event.setState(EventState.PENDING.toString());
         event.setCreatedOn(LocalDateTime.now());
         if (event.getParticipantLimit().equals(0L)) {
-            event.setState(EventState.PUBLISHED.toString());
+            setEventPublished(event);
         }
 
         EventDto res = addInfo(eventRepository.save(event));
@@ -169,14 +169,13 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public Page<EventShortDto> getByFilter(EventFilter filter) {
-        System.out.println(filter);
 
         checkFilterDateRangeIsGood(filter.getRangeStart(), filter.getRangeEnd());
 
         EventSpecs e = new EventSpecs();
         Specification<Event> spec = Specification.where(null);
 
-        if (filter.getText() != null) {
+        if (filter.getText() != null && !filter.getText().isBlank()) {
             spec = spec.and(e.hasTitle(filter.getText()));
         }
 
@@ -272,6 +271,29 @@ public class EventServiceImpl implements EventService {
             updateEventLocationOrCreateNew(event, updated.getLocation());
         }
 
+        if (updated.getAnnotation() != null) {
+            event.setAnnotation(updated.getAnnotation());
+        }
+
+        if (updated.getPaid() != null) {
+            event.setPaid(updated.getPaid());
+        }
+
+        if (updated.getEventDate() != null) {
+            event.setEventDate(updated.getEventDate());
+        }
+
+        if (updated.getDescription() != null) {
+            event.setDescription(updated.getDescription());
+        }
+
+        if (updated.getTitle() != null) {
+            event.setTitle(updated.getTitle());
+        }
+
+        if (updated.getParticipantLimit() != null) {
+            event.setParticipantLimit(updated.getParticipantLimit());
+        }
 
         if (action != null) {
             if (isAdminEditThis) {
@@ -286,7 +308,7 @@ public class EventServiceImpl implements EventService {
                 }
 
                 if (action.equals(StateAction.PUBLISH_EVENT.toString())) {
-                    event.setState(EventState.PUBLISHED.toString());
+                    setEventPublished(event);
                 } else if (action.equals(StateAction.REJECT_EVENT.toString())) {
                     if (event.getState().equals(EventState.PUBLISHED.toString())) {
                         throw new BadConditionsException("Нельзя отменить уже опубликованное событие");
@@ -376,6 +398,7 @@ public class EventServiceImpl implements EventService {
             List<Long> toConfirmIds = toConfirm.stream()
                     .map(ParticipationRequestDto::getId).toList();
 
+            toConfirm.forEach(x -> x.setStatus(RequestStatus.CONFIRMED.toString()));
             requestService.setStatusAll(toConfirmIds, RequestStatus.CONFIRMED.toString());
 
             List<ParticipationRequestDto> toReject = List.of();
@@ -429,11 +452,6 @@ public class EventServiceImpl implements EventService {
         List<UserDto> users = userService.get(usersIds);
         List<LocationDto> locations = locationService.get(locationsIds);
         Map<Long, Long> requests = requestService.getConfirmedEventsRequestsCount(eventsIds);
-
-        System.out.println("BEFORE ============================");
-
-        System.out.println(requests.toString());
-        System.out.println("BEFORE ============================");
 
         Map<Long, CategoryDto> catsByIds = categories.stream()
                 .collect(Collectors.toMap(CategoryDto::getId, Function.identity()));
@@ -497,5 +515,10 @@ public class EventServiceImpl implements EventService {
             throw new ConstraintViolationException(
                     "Неверно задана дата начала и конца события в фильтре");
         }
+    }
+
+    private void setEventPublished(Event event) {
+        event.setState(EventState.PUBLISHED.toString());
+        event.setPublishedOn(LocalDateTime.now());
     }
 }

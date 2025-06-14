@@ -10,6 +10,7 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 public class EventRequestStatusUpdateResult {
 
     private List<ParticipationRequestDto> confirmedRequests;

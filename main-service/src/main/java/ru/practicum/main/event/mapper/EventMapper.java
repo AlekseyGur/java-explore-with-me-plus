@@ -4,6 +4,7 @@ import lombok.experimental.UtilityClass;
 import ru.practicum.main.event.dto.EventShortDto;
 import ru.practicum.main.event.dto.NewEventDto;
 import ru.practicum.main.event.model.Event;
+import ru.practicum.main.user.mapper.UserMapper;
 import ru.practicum.main.event.dto.EventDto;
 
 import java.util.List;
@@ -15,6 +16,7 @@ public class EventMapper {
         return EventDto.builder()
                 .id(event.getId())
                 .title(event.getTitle())
+                .description(event.getDescription())
                 .annotation(event.getAnnotation())
                 .description(event.getDescription())
                 .categoryId(event.getCategoryId())
@@ -33,26 +35,42 @@ public class EventMapper {
     public static EventShortDto toShortDto(Event event) {
         return EventShortDto.builder()
                 .id(event.getId())
+                .description(event.getDescription())
                 .annotation(event.getAnnotation())
                 .categoryId(event.getCategoryId())
                 .eventDate(event.getEventDate())
+                .createdOn(event.getCreatedOn())
+                .publishedOn(event.getPublishedOn())
+                .confirmedRequests(event.getConfirmedRequests())
+                .participantLimit(event.getParticipantLimit())
                 .initiatorId(event.getInitiatorId())
                 .paid(event.getPaid())
                 .title(event.getTitle())
                 .views(event.getViews())
+                .state(event.getTitle())
+                .requestModeration(event.getRequestModeration())
                 .build();
     }
 
     public static EventShortDto toShortDto(EventDto event) {
         return EventShortDto.builder()
                 .id(event.getId())
+                .description(event.getDescription())
                 .annotation(event.getAnnotation())
                 .categoryId(event.getCategoryId())
+                .category(event.getCategory())
                 .eventDate(event.getEventDate())
+                .createdOn(event.getCreatedOn())
+                .publishedOn(event.getPublishedOn())
+                .confirmedRequests(event.getConfirmedRequests())
+                .participantLimit(event.getParticipantLimit())
                 .initiatorId(event.getInitiatorId())
+                .initiator(UserMapper.toShortfromDto(event.getInitiator()))
                 .paid(event.getPaid())
                 .title(event.getTitle())
                 .views(event.getViews())
+                .state(event.getTitle())
+                .requestModeration(event.getRequestModeration())
                 .build();
     }
 

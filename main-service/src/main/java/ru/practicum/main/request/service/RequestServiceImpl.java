@@ -115,8 +115,8 @@ public class RequestServiceImpl implements RequestService {
         return requestRepository
                 .getCountByEventIdInAndStatus(eventsIds, RequestStatus.CONFIRMED.toString()).stream()
                 .collect(Collectors.toMap(
-                        row -> ((Number) row[0]).longValue(), // извлекаем eventId
-                        row -> ((Number) row[1]).longValue() // извлекаем количество заявок
+                        row -> ((Number) row[0]).longValue(),
+                        row -> ((Number) row[1]).longValue()
                 ));
     }
 
