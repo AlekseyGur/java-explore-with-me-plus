@@ -8,6 +8,9 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import javax.validation.constraints.Positive;
+import javax.validation.constraints.PositiveOrZero;
+
 public interface EventService {
     EventDto get(Long eventId);
 
@@ -35,4 +38,5 @@ public interface EventService {
             EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest);
 
     List<ParticipationRequestDto> findAllRequestsByEventId(Long eventId, Long userId);
+
 }
