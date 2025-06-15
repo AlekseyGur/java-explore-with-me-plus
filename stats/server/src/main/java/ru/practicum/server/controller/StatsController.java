@@ -1,16 +1,13 @@
 package ru.practicum.server.controller;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import io.micrometer.common.lang.Nullable;
 import ru.practicum.dto.HitDto;
-import ru.practicum.dto.NewHitDto;
 import ru.practicum.dto.StatDto;
 import ru.practicum.server.service.StatService;
 
@@ -21,13 +18,12 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @Validated
-@Slf4j
 public class StatsController {
     private final StatService statService;
 
     @PostMapping(path = "/hit")
     @ResponseStatus(HttpStatus.CREATED)
-    public void save(@RequestBody @Valid NewHitDto newHitDto) {
+    public void save(@RequestBody @Valid HitDto newHitDto) {
         statService
                 .save(new HitDto(newHitDto.getApp(), newHitDto.getUri(), newHitDto.getIp(), newHitDto.getTimestamp()));
     }
@@ -36,8 +32,8 @@ public class StatsController {
     public List<StatDto> getStats(
                     @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime start,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime end,
-            @RequestParam @Nullable List<String> uris,
-                    @RequestParam(defaultValue = "false") boolean unique) {
+            @RequestParam(required = false) List<String> uris,
+            @RequestParam(defaultValue = "false") boolean unique) {
         return statService.get(start, end, uris, unique);
     }
 }

@@ -4,7 +4,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -54,62 +53,73 @@ public class StatServiceTest {
     }
 
     @Test
-    void testGetStatsWithUniqueViews() {
+    void testfindByTimestampBetweenWithUniqueViews() {
         List<String> uris = Arrays.asList("/some/endpoint");
         boolean unique = true;
         LocalDateTime start = LocalDateTime.now().minusDays(1);
         LocalDateTime end = LocalDateTime.now();
+        List<Object[]> rawData = Arrays.asList(
+                new Object[] { "app1", "/api/v1/events", 2L },
+                new Object[] { "app1", "/api/v1/users", 1L },
+                new Object[] { "app2", "/api/v1/events", 1L },
+                new Object[] { "app2", "/api/v1/users", 1L });
 
-        when(endpointHitRepository.getUniqueStatsByUris(start, end, uris)).thenReturn(Arrays.asList(viewStats));
+        when(endpointHitRepository.findHitsUnique(start, end, uris)).thenReturn(rawData);
 
         List<StatDto> result = statService.get(start, end, uris, unique);
 
-        assertEquals(1, result.size(), "Количество результатов должно быть равно 1");
-        verify(endpointHitRepository, times(1)).getUniqueStatsByUris(start, end, uris);
+        assertEquals(4, result.size(), "Количество результатов должно быть равно 1");
+        verify(endpointHitRepository, times(1)).findHitsUnique(start, end, uris);
     }
 
     @Test
-    void testGetStatsWithoutUniqueViews() {
+    void testfindByTimestampBetweenWithoutUniqueViews() {
         List<String> uris = Collections.emptyList();
         boolean unique = false;
         LocalDateTime start = LocalDateTime.now().minusDays(1);
         LocalDateTime end = LocalDateTime.now();
+        List<Object[]> rawData = Collections.emptyList();
 
-        when(endpointHitRepository.getStats(start, end)).thenReturn(new ArrayList<>());
+        when(endpointHitRepository.findHits(start, end, uris)).thenReturn(rawData);
 
         List<StatDto> result = statService.get(start, end, uris, unique);
 
         assertTrue(result.isEmpty(), "Результат должен быть пустой список");
-        verify(endpointHitRepository, times(1)).getStats(start, end);
+        verify(endpointHitRepository, times(1)).findHits(start, end, uris);
     }
 
     @Test
-    void testGetStatsForSpecificUrisAndUniqueIP() {
+    void testfindByTimestampBetweenForSpecificUrisAndUniqueIP() {
         List<String> uris = Arrays.asList("/specific/path");
         boolean unique = true;
         LocalDateTime start = LocalDateTime.now().minusHours(1);
         LocalDateTime end = LocalDateTime.now();
+        List<Object[]> rawData = Arrays.asList(
+                new Object[] { "app1", "/api/v1/events", 2L },
+                new Object[] { "app1", "/api/v1/users", 1L },
+                new Object[] { "app2", "/api/v1/events", 1L },
+                new Object[] { "app2", "/api/v1/users", 1L });
 
-        when(endpointHitRepository.getUniqueStatsByUris(start, end, uris)).thenReturn(Arrays.asList(viewStats));
+        when(endpointHitRepository.findHitsUnique(start, end, uris)).thenReturn(rawData);
 
         List<StatDto> result = statService.get(start, end, uris, unique);
 
-        assertEquals(1, result.size(), "Количество результатов должно быть равно 1");
-        verify(endpointHitRepository, times(1)).getUniqueStatsByUris(start, end, uris);
+        assertEquals(4, result.size(), "Количество результатов должно быть равно 1");
+        verify(endpointHitRepository, times(1)).findHitsUnique(start, end, uris);
     }
 
     @Test
-    void testGetStatsWhenNoDataFound() {
+    void testfindByTimestampBetweenWhenNoDataFound() {
         List<String> uris = Arrays.asList("/nonexistent/path");
         boolean unique = true;
         LocalDateTime start = LocalDateTime.now().minusHours(1);
         LocalDateTime end = LocalDateTime.now();
 
-        when(endpointHitRepository.getUniqueStatsByUris(start, end, uris)).thenReturn(Collections.emptyList());
+        when(endpointHitRepository.findHitsUnique(start, end, uris)).thenReturn(Collections.emptyList());
 
         List<StatDto> result = statService.get(start, end, uris, unique);
 
         assertTrue(result.isEmpty(), "Ожидается пустой список результата");
-        verify(endpointHitRepository, times(1)).getUniqueStatsByUris(start, end, uris);
+        verify(endpointHitRepository, times(1)).findHitsUnique(start, end, uris);
     }
 }
