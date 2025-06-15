@@ -1,28 +1,57 @@
 package ru.practicum.main.comment.mappers;
 
-import org.mapstruct.Mapper;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
-import org.mapstruct.factory.Mappers;
-import org.mapstruct.Mapping;
+import java.time.LocalDateTime;
+
+import lombok.experimental.UtilityClass;
+
 import ru.practicum.main.comment.dto.CommentDto;
+import ru.practicum.main.comment.dto.NewCommentDto;
 import ru.practicum.main.comment.dto.UpdateCommentDto;
-import ru.practicum.main.event.mapper.EventMapper;
-import ru.practicum.main.user.mapper.UserMapper;
+import ru.practicum.main.event.model.Event;
+import ru.practicum.main.user.model.User;
 import ru.practicum.main.comment.model.Comment;
 
-@Mapper(componentModel = "spring",
-        uses = {
-                UserMapper.class,
-                EventMapper.class}, nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-public interface CommentMapper {
-    CommentMapper INSTANCE = Mappers.getMapper(CommentMapper.class);
+@UtilityClass
+public class CommentMapper {
 
-    @Mapping(target = "eventId", source = "event.id")
-    @Mapping(target = "userId", source = "user.id")
-    CommentDto toCommentDto(Comment comment);
+    public static CommentDto toCommentDto(Comment comment) {
+        if (comment == null) {
+            return null;
+        }
 
-    @Mapping(target = "createdOn", ignore = true)
-    @Mapping(target = "event", ignore = true)
-    Comment updateComment(UpdateCommentDto updateCommentDto, @MappingTarget Comment storedComment);
+        CommentDto dto = new CommentDto();
+        dto.setId(comment.getId());
+        dto.setText(comment.getText());
+        dto.setUserId(comment.getUser().getId());
+        dto.setEventId(comment.getEvent().getId());
+        dto.setCreatedOn(comment.getCreatedOn());
+
+        return dto;
+    }
+
+    public static Comment updateComment(UpdateCommentDto updateCommentDto, Comment storedComment) {
+        if (updateCommentDto == null || storedComment == null) {
+            return null;
+        }
+
+        if (updateCommentDto.getText() != null) {
+            storedComment.setText(updateCommentDto.getText());
+        }
+
+        return storedComment;
+    }
+
+    public static Comment fromNewCommentDto(NewCommentDto newCommentDto, User user, Event event) {
+        if (newCommentDto == null) {
+            return null;
+        }
+
+        Comment comment = new Comment();
+        comment.setText(newCommentDto.getText());
+        comment.setUser(user);
+        comment.setEvent(event);
+        comment.setCreatedOn(LocalDateTime.now());
+
+        return comment;
+    }
 }

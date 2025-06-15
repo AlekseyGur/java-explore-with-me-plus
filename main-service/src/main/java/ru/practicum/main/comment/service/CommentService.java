@@ -6,7 +6,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
 import ru.practicum.main.comment.dto.CommentDto;
+import ru.practicum.main.comment.dto.DtoValidator;
 import ru.practicum.main.comment.dto.NewCommentDto;
 import ru.practicum.main.comment.dto.UpdateCommentDto;
 import ru.practicum.main.comment.mappers.CommentMapper;
@@ -19,7 +21,6 @@ import ru.practicum.main.exception.NotFoundException;
 import ru.practicum.main.exception.RequestValidationException;
 import ru.practicum.main.user.model.User;
 import ru.practicum.main.user.repository.UserRepository;
-import ru.practicum.main.validation.DtoValidator;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -52,7 +53,7 @@ public class CommentService {
                     now);
         }
         Comment newComment = new Comment(null, newCommentDto.getText(), commentator, stored, now);
-        return CommentMapper.INSTANCE.toCommentDto(commentRepository.save(newComment));
+        return CommentMapper.toCommentDto(commentRepository.save(newComment));
     }
 
     public void deleteCommentByIdByOwner(Long userId, Long commentId) {
@@ -94,15 +95,15 @@ public class CommentService {
                     "Пользователь не автор", now);
         }
         validator.validateUpdCommentDto(dto);
-        Comment updComment = CommentMapper.INSTANCE.updateComment(dto, stored);
-        return CommentMapper.INSTANCE.toCommentDto(commentRepository.save(updComment));
+        Comment updComment = CommentMapper.updateComment(dto, stored);
+        return CommentMapper.toCommentDto(commentRepository.save(updComment));
     }
 
     public List<CommentDto> getCommentsByEventId(Long eventId) {
         log.info("Получение комментариев для события {}", eventId);
         return commentRepository.getAllByEventId(eventId)
                 .stream()
-                .map(CommentMapper.INSTANCE::toCommentDto)
+                        .map(CommentMapper::toCommentDto)
                 .collect(Collectors.toList());
     }
 
@@ -110,7 +111,7 @@ public class CommentService {
         log.info("Получение всех комментариев пользователя {}", userId);
         return commentRepository.getAllByUserId(userId)
                 .stream()
-                .map(CommentMapper.INSTANCE::toCommentDto)
+                        .map(CommentMapper::toCommentDto)
                 .collect(Collectors.toList());
     }
 
@@ -127,7 +128,7 @@ public class CommentService {
             throw new NotFoundException("Информацию о комментарии может получить только автор",
                     "Пользователь не автор", now);
         }
-        return CommentMapper.INSTANCE.toCommentDto(stored);
+        return CommentMapper.toCommentDto(stored);
     }
 
     public List<CommentDto> getAll(LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size) {
@@ -136,7 +137,7 @@ public class CommentService {
         List<Comment> comments = commentRepository.findAllByCreatedOnBetween(rangeStart, rangeEnd, pageable);
 
         return comments.stream()
-                .map(CommentMapper.INSTANCE::toCommentDto)
+                        .map(CommentMapper::toCommentDto)
                 .collect(Collectors.toList());
     }
 }
