@@ -1,11 +1,9 @@
-package ru.practicum.main.validation;
+package ru.practicum.main.comment.dto;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import ru.practicum.main.category.dto.CategoryDto;
-import ru.practicum.main.comment.dto.NewCommentDto;
-import ru.practicum.main.comment.dto.UpdateCommentDto;
 import ru.practicum.main.event.dto.UpdateEventDto;
 import ru.practicum.main.event.dto.NewEventDto;
 import ru.practicum.main.event.model.Event;
