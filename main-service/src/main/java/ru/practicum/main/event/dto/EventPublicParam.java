@@ -14,7 +14,7 @@ import java.util.Collection;
 @Setter
 public class EventPublicParam {
     @NotNull
-    String text;
+    private String text;
 
     private Collection<Long> categories;
 

@@ -34,7 +34,7 @@ public class EventFilter {
     @PositiveOrZero
     private Integer size;
 
-    Boolean onlyAvailable;
+    private Boolean onlyAvailable;
 
     private List<String> states;
 
