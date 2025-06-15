@@ -14,7 +14,6 @@ public class ViewNewDto {
     private Long eventId;
 
     @NotBlank
-    @NotNull
     @Size(min = 7, max = 15)
     private String ip;
 }
