@@ -2,6 +2,8 @@ package ru.practicum.main.compilations.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import ru.practicum.main.compilations.dto.CompilationDto;
 import ru.practicum.main.compilations.dto.RequestCompilationCreate;
 import ru.practicum.main.compilations.dto.RequestCompilationUpdate;
@@ -19,6 +21,7 @@ import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class CompilationServiceImpl implements CompilationService {
     private final CompilationRepository compilationRepository;
     private final EventRepository eventRepository;
@@ -46,6 +49,7 @@ public class CompilationServiceImpl implements CompilationService {
     }
 
     @Override
+    @Transactional
     public CompilationDto createCompilation(RequestCompilationCreate requestDto) {
         Compilation compilation = new Compilation();
         compilation.setTitle(requestDto.getTitle());
@@ -55,15 +59,21 @@ public class CompilationServiceImpl implements CompilationService {
         } else {
             compilation.setEvents(new ArrayList<>());
         }
-        return CompilationMapper.toDto(compilationRepository.save(compilation));
+
+        Compilation res = compilationRepository.save(compilation);
+        compilationRepository.flush();
+        return CompilationMapper.toDto(res);
     }
 
     @Override
+    @Transactional
     public void deleteCompilation(long compId) {
         compilationRepository.deleteById(compId);
+        compilationRepository.flush();
     }
 
     @Override
+    @Transactional
     public CompilationDto updateCompilation(long compId, RequestCompilationUpdate requestDto) {
         Compilation compilation = compilationRepository.findById(compId)
                 .orElseThrow(() -> new NotFoundException("Подборка не найдена"));
@@ -76,6 +86,9 @@ public class CompilationServiceImpl implements CompilationService {
         if (requestDto.getEvents() != null) {
             compilation.setEvents(eventRepository.findAllById(requestDto.getEvents()));
         }
-        return CompilationMapper.toDto(compilationRepository.save(compilation));
+
+        Compilation res = compilationRepository.save(compilation);
+        compilationRepository.flush();
+        return CompilationMapper.toDto(res);
     }
 }
