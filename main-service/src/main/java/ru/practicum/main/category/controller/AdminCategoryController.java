@@ -1,6 +1,7 @@
 package ru.practicum.main.category.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
@@ -25,14 +26,14 @@ public class AdminCategoryController {
 
     @PatchMapping("/{categoryId}")
     @ResponseStatus(HttpStatus.OK)
-    public CategoryDto update(@PathVariable Long categoryId,
-            @RequestBody @Valid CategoryUpdateDto categoryDto) {
+    public CategoryDto update(@PathVariable @Positive Long categoryId,
+                    @RequestBody @Valid CategoryUpdateDto categoryDto) {
         return categoryService.update(categoryId, categoryDto);
     }
 
     @DeleteMapping("/{categoryId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long categoryId) {
+    public void delete(@PathVariable @Positive Long categoryId) {
         categoryService.delete(categoryId);
     }
 }

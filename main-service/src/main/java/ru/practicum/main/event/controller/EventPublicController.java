@@ -1,6 +1,8 @@
 package ru.practicum.main.event.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 
 import org.springframework.format.annotation.DateTimeFormat;
@@ -35,8 +37,8 @@ public class EventPublicController {
                         @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeEnd,
                                         @RequestParam(defaultValue = "false") Boolean onlyAvailable,
                         @RequestParam(required = false) String sort,
-                        @RequestParam(defaultValue = "0") Integer from,
-                        @RequestParam(defaultValue = "10") Integer size,
+                        @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
+                                        @RequestParam(defaultValue = "10") @Positive Integer size,
                                         HttpServletRequest request) {
 
                 HitDto hitDto = HitDto.builder()
@@ -64,7 +66,7 @@ public class EventPublicController {
 
         @GetMapping(path = "/{eventId}")
         @ResponseStatus(HttpStatus.OK)
-        public EventDto getById(@PathVariable Long eventId, HttpServletRequest request) {
+        public EventDto getById(@PathVariable @Positive Long eventId, HttpServletRequest request) {
 
                 HitDto hitDto = HitDto.builder()
                                 .app("ewm-main-service")

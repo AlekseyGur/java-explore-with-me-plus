@@ -3,6 +3,8 @@ package ru.practicum.main.event.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 
 import org.springframework.format.annotation.DateTimeFormat;
@@ -41,8 +43,8 @@ public class EventAdminController {
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") @Future LocalDateTime rangeEnd,
             @RequestParam(defaultValue = "false") Boolean onlyAvailable,
             @RequestParam(required = false) String sort,
-            @RequestParam(defaultValue = "0") Integer from,
-            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
+            @RequestParam(defaultValue = "10") @Positive Integer size,
             HttpServletRequest request) {
 
         HitDto hitDto = HitDto.builder()
@@ -71,7 +73,7 @@ public class EventAdminController {
     }
 
     @PatchMapping("/{eventId}")
-    public EventDto update(@PathVariable long eventId,
+    public EventDto update(@PathVariable @Positive long eventId,
             @Valid @RequestBody UpdateEventDto updateEvent) {
             return eventService.updateByAdmin(eventId, updateEvent);
     }

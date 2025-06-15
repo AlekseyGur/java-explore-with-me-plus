@@ -1,6 +1,8 @@
 package ru.practicum.main.compilations.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
@@ -20,13 +22,13 @@ public class CompilationController {
 
     @GetMapping(path = "/compilations")
     public List<CompilationDto> getList(@RequestParam(required = false) Boolean pinned,
-                                    @RequestParam(defaultValue = "0") int from,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "0") @PositiveOrZero int from,
+            @RequestParam(defaultValue = "10") @Positive int size) {
         return compilationService.getCompilationList(pinned, from, size);
     }
 
     @GetMapping(path = "/compilations/{compId}")
-    public CompilationDto getById(@PathVariable long compId) {
+    public CompilationDto getById(@PathVariable @Positive long compId) {
         return compilationService.getById(compId);
     }
 
@@ -38,13 +40,14 @@ public class CompilationController {
 
     @DeleteMapping(path = "/admin/compilations/{compId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable long compId) {
+    public void delete(@PathVariable @Positive long compId) {
         compilationService.deleteCompilation(compId);
     }
 
     @PatchMapping(path = "/admin/compilations/{compId}")
     @ResponseStatus(HttpStatus.OK)
-    public CompilationDto patch(@PathVariable long compId, @Valid @RequestBody RequestCompilationUpdate requestDto) {
+    public CompilationDto patch(@PathVariable @Positive long compId,
+            @Valid @RequestBody RequestCompilationUpdate requestDto) {
         return compilationService.updateCompilation(compId, requestDto);
     }
 }

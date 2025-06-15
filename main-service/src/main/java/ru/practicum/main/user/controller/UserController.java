@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import ru.practicum.main.user.dto.UserDto;
 import ru.practicum.main.user.dto.UserNewDto;
@@ -34,8 +36,8 @@ public class UserController {
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public List<UserDto> get(@RequestParam(required = false) List<Long> ids,
-            @RequestParam(defaultValue = "0") Integer from,
-            @RequestParam(defaultValue = "10") Integer size) {
+            @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
+            @RequestParam(defaultValue = "10") @Positive Integer size) {
         Sort sort = Sort.unsorted();
         PageRequest pageable = PageRequest.of(from, size, sort);
         return userService.get(ids, pageable).toList();
@@ -49,15 +51,15 @@ public class UserController {
 
     @PatchMapping("/{userId}")
     @ResponseStatus(HttpStatus.OK)
-    public UserDto patch(@PathVariable Long userId,
-            @Valid @RequestBody UserUpdateDto user) {
+    public UserDto patch(@PathVariable @Positive Long userId,
+                    @Valid @RequestBody UserUpdateDto user) {
         user.setId(userId);
         return userService.patch(user);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
+    public void delete(@PathVariable @Positive Long id) {
         userService.delete(id);
     }
 }
