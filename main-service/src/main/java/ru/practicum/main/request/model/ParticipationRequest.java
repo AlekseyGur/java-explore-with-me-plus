@@ -14,17 +14,17 @@ import java.time.LocalDateTime;
 public class ParticipationRequest {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long id;
+    private Long id;
 
     @Column(name = "created", nullable = false)
-    LocalDateTime created;
+    private LocalDateTime created;
 
     @Column(name = "status", nullable = false)
-    String status;
+    private String status;
 
     @Column(name = "event_id", nullable = false)
-    Long eventId;
+    private Long eventId;
 
     @Column(name = "requester_id", nullable = false)
-    Long requesterId;
+    private Long requesterId;
 }
