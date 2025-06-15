@@ -9,8 +9,6 @@ import lombok.ToString;
 
 import java.util.List;
 
-
-
 @AllArgsConstructor
 @Getter
 @Setter
@@ -18,6 +16,7 @@ import java.util.List;
 public class RequestCompilationCreate {
     private List<Long> events;
     private Boolean pinned;
+
     @NotBlank
     @Size(min = 1, max = 50)
     private String title;

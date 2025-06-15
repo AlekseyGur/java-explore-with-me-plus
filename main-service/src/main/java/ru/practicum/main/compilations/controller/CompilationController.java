@@ -15,8 +15,8 @@ import ru.practicum.main.compilations.service.CompilationService;
 import java.util.List;
 
 @RestController
-@Validated
 @RequiredArgsConstructor
+@Validated
 public class CompilationController {
     private final CompilationService compilationService;
 
