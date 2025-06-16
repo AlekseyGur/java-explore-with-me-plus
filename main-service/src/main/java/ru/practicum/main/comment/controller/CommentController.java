@@ -1,6 +1,5 @@
 package ru.practicum.main.comment.controller;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.validation.annotation.Validated;
@@ -8,7 +7,9 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import ru.practicum.main.comment.dto.*;
 import ru.practicum.main.comment.service.CommentService;
 
@@ -19,52 +20,48 @@ import ru.practicum.main.comment.service.CommentService;
 public class CommentController {
     private final CommentService commentService;
 
-    @PostMapping
+    @PostMapping("/user/{userId}")
+    @ResponseStatus(HttpStatus.CREATED)
     public CommentDto createComment(@PathVariable @Positive Long userId,
             @Valid @RequestBody NewCommentDto newCommentDto) {
         return commentService.createComment(userId, newCommentDto);
     }
 
-    @PutMapping("{userId}/comment/{commentId}")
+    @PatchMapping("/user/{userId}/comment/{commentId}")
     public CommentDto updateComment(@PathVariable @Positive Long userId,
-            @PathVariable Long commentId,
+            @PathVariable @Positive Long commentId,
             @Valid @RequestBody UpdateCommentDto updateCommentDto) {
         return commentService.updateCommentForEvent(commentId, userId, updateCommentDto);
     }
 
-    @DeleteMapping("{userId}/comment/{commentId}")
+    @DeleteMapping("/user/{userId}/comment/{commentId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteCommentByOwner(@PathVariable @Positive Long userId,
             @PathVariable Long commentId) {
         commentService.deleteCommentByIdByOwner(userId, commentId);
     }
 
     @DeleteMapping("/admin/{commentId}")
-    public void deleteCommentByAdmin(@PathVariable Long commentId) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteCommentByAdmin(@PathVariable @Positive Long commentId) {
         commentService.deleteCommentByIdByAdmin(commentId);
     }
 
     @GetMapping("/event/{eventId}")
-    public List<CommentDto> getCommentsByEvent(@PathVariable Long eventId) {
+    public List<CommentDto> getCommentsByEvent(@PathVariable @Positive Long eventId) {
         return commentService.getCommentsByEventId(eventId);
     }
 
     @GetMapping("/user/{userId}")
     public List<CommentDto> getUserComments(
-            @PathVariable Long userId) {
+            @PathVariable @Positive Long userId) {
         return commentService.getAllForUser(userId);
     }
 
-    @GetMapping("{userId}/comment/{commentId}")
-    public CommentDto getUserComment(@PathVariable @Positive Long userId,
-            @PathVariable Long commentId) {
-        return commentService.getCommentByIdForUser(userId, commentId);
-    }
-
     @GetMapping
-    public List<CommentDto> getAllComments(@RequestParam(required = false) LocalDateTime rangeStart,
-            @RequestParam(required = false) LocalDateTime rangeEnd,
-            @RequestParam(defaultValue = "0") @Positive Integer from,
+    public List<CommentDto> getAllComments(
+                    @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
             @RequestParam(defaultValue = "10") @Positive Integer size) {
-        return commentService.getAll(rangeStart, rangeEnd, from, size);
+        return commentService.getAll(from, size);
     }
 }

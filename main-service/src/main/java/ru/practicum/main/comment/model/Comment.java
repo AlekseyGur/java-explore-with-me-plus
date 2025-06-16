@@ -25,11 +25,11 @@ public class Comment {
     private String text;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinTable(name = "users", joinColumns = @JoinColumn(name = "id"), inverseJoinColumns = @JoinColumn(name = "user_id"))
+    @JoinColumn(name = "user_id")
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinTable(name = "events", joinColumns = @JoinColumn(name = "id"), inverseJoinColumns = @JoinColumn(name = "event_id"))
+    @JoinColumn(name = "event_id")
     private Event event;
 
     @Column(name = "create_date")
