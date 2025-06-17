@@ -85,7 +85,7 @@
 | `DELETE /admin/compilations/{compId}` | Удаление подборки |
 | `PATCH /admin/compilations/{compId}` | Обновление информации о подборке |
 |||
-| **Эндпоинты для комментариев** | |
+| **Comments: Комментарии** | |
 | `POST /comments/user/{userId}` | Добавление комментария к событию |
 | `PATCH /comments/user/{userId}/comment/{commentId}` | Редактирование комментария владельцем |
 | `DELETE /comments/user/{userId}/comment/{commentId}` | Удаление комментария владельцем |
